@@ -1,0 +1,29 @@
+[package]
+name = "blitz-kit"
+description = "Portable Blitz repairs and helpers: hover sync, local net provider, shared fonts, adapter choice, painted rects, pixel snap."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+blitz-dom = { workspace = true }
+blitz-traits = { workspace = true }
+parley = { workspace = true }
+# `net::LocalNet` reads files on the caller's blocking pool.
+tokio = { workspace = true }
+# Feature `adapter`: the ranking of GPU adapters, and `AdapterPref` (a shell's serialized setting).
+wgpu = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+
+[features]
+default = []
+adapter = ["dep:wgpu", "dep:serde"]
+
+[dev-dependencies]
+keyboard-types = { workspace = true }
+
+[lints]
+workspace = true
