@@ -39,7 +39,7 @@ dioxus-document = "0.7"
 # Render stack, matched to blitz's lockfile at the rev above.
 anyrender = "0.13"
 anyrender_vello_hybrid = "0.10"
-anyrender_vello_cpu = { version = "0.17", features = ["multithreading"] }
+anyrender_vello_cpu = { version = "0.17", features = ["multithreading", "filters"] }
 vello_hybrid = "0.1"
 wgpu = "29"
 wgpu_context = "0.9"
@@ -105,3 +105,4 @@ latchkey = { git = "https://github.com/PoHsuanLai/mailo", rev = "43ebf45f244a23c
 [workspace.lints.rust]
 unsafe_code = "deny"
 missing_debug_implementations = "warn"
+

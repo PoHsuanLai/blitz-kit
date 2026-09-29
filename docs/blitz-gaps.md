@@ -3,7 +3,8 @@
 A running list for our Blitz fork (`github.com/PoHsuanLai/blitz` rev `bf588142` = upstream
 `e99fbdbd` plus one restyle patch) and for upstream PRs to DioxusLabs/blitz, stylo and vello. The
 stack at the pin: dioxus-native-dom, stylo 0.21, parley 0.11, anyrender_vello_hybrid 0.10,
-anyrender_vello_cpu 0.17. Each entry says what we want, what Blitz does today, how we know, and the
+anyrender_vello_cpu 0.17, with vello and anyrender patched from our forks
+(`github.com/PoHsuanLai/vello` and `/anyrender`, branch `quire-filters`). Each entry says what we want, what Blitz does today, how we know, and the
 cheapest route. Add entries as work hits them; keep the evidence line honest (`verified` = a test,
 a spike or a source line read at the pin; `assumed` = research 2026-09-23, not yet checked here).
 Paths are relative to `~` (`quire/FINDINGS.md` and so on).
@@ -17,8 +18,6 @@ system), **host** (worked around in shell-host).
 | Want | Blitz today | Evidence | Route |
 | --- | --- | --- | --- |
 | `backdrop-filter: blur()` inside a surface (frosted cards over content in the same window) | Every Vello backend takes it as `_backdrop_filter` and ignores it; only anyrender_skia implements it | verified: quire/FINDINGS.md S15 (cpu and hybrid); Skia claim assumed, research 2026-09-23 | PR (vello backends), quire (compositor blur through `ext-background-effect-v1`, `data-blur` materials) |
-| `filter` colour functions (`brightness`, `contrast`, `invert`, `opacity`, `grayscale`, `hue-rotate`, `saturate`, `sepia`) for vibrancy, muted avatars and user styles | Painted by neither backend: vello_common/vello_cpu/vello_hybrid 0.1 implement only flood, blur, offset and drop-shadow (a colour matrix reaches `unimplemented!`); anyrender maps only the first filter node, so `contrast() blur()` drops both | verified: quire `ds-native/tests/css_filter.rs` | fork (vello: one `ColorMatrix` primitive in vello_common + a cpu pass + a hybrid `PASS_COLOR_MATRIX` with the filter struct grown to 96 bytes; anyrender: component-transfer functions as matrices, a filter list as nested layers), PR (all of it); quire lint warns per function (`FilterNotPainted`) |
-| `filter: blur()` and `drop-shadow()` on the CPU backend | Painted by hybrid; dropped by vello_cpu with `multithreading` (the multi-threaded dispatcher has no filter support); vello_cpu's `filters` feature without multithreading paints them but panics on the colour functions and costs 2.7x snapshot time | verified: quire `ds-native/tests/css_filter.rs` | fork (vello_cpu `dispatch/multi_threaded.rs` filter layers, and `None` instead of a panic for unsupported filters) |
 | `mix-blend-mode` (grain and lighting overlays) | Not exercised; assumed unsupported | assumed: research 2026-09-23; quire/crates/ds/src/lint/blitz.rs:20 | PR, quire (PNG grain layer, precomputed blends) |
 | `text-shadow` | Not exercised; assumed unsupported | assumed: research 2026-09-23; quire/crates/ds/src/lint/blitz.rs:33 | PR, quire (avoided) |
 | Sweep (conic) gradients, gradient extend Repeat/Reflect, gradient paint on strokes and text, blur, filters and blend operators beyond source-over in PDF replay | anyrender's recording `Scene` replay (pdfrum) lacks them; anyrender `draw_glyphs` also carries no text, so PDF glyph text is recovered by walking parley layouts | verified: quire/FINDINGS.md:116 ("pdfrum asks"), :25 region ("anyrender draw_glyphs", Open items) | PR (anyrender: text-and-clusters argument), quire |
@@ -126,6 +125,14 @@ system), **host** (worked around in shell-host).
 
 ## Verified to work
 
+- Every CSS `filter` function (`blur`, `drop-shadow`, `brightness`, `contrast`, `invert`, `opacity`,
+  `grayscale`, `hue-rotate`, `saturate`, `sepia`) and filter lists such as `contrast() blur()` paint on
+  both vello_hybrid and multi-threaded vello_cpu, with no snapshot slowdown
+  (`quire/crates/ds-native/tests/css_filter.rs`). This needs our vello and anyrender forks: a
+  colour-matrix primitive (vello_common, a cpu pass, a hybrid pass), filter layers in vello_cpu's
+  multi-threaded dispatcher, and anyrender mapping component-transfer functions to matrices and a
+  list to nested layers. Four PRs to offer upstream: vello colour matrix, the hybrid pass, the
+  multi-threaded filter layers, the anyrender mapping.
 - Runtime `<style>` text changes restyle the document, including custom-property overrides and an
   emptied sheet (`quire/crates/ds-native/tests/user_style_reload.rs`:
   `a_changed_style_text_restyles_the_probe`, `a_changed_custom_property_override_restyles_the_probe`).
