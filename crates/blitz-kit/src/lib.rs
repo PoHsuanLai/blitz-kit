@@ -2,8 +2,12 @@
 //! and returns CSS px `f64` in Blitz's own units ([`units`]); a consumer converts at its own
 //! boundary.
 
+#[cfg(feature = "adapter")]
+pub mod adapter;
 pub mod fonts;
 pub mod hit;
 pub mod hover;
 pub mod net;
+pub mod paint_rect;
+pub mod snap;
 pub mod units;
