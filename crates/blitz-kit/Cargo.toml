@@ -27,3 +27,7 @@ keyboard-types = { workspace = true }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "adapter"
+required-features = ["adapter"]
