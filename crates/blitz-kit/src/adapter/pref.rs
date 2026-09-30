@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// cross-GPU adapter can pass `is_surface_supported` and still have its first buffer rejected
 /// with a fatal protocol error (RADV on this machine, `zwp_linux_dmabuf` error 7).
 /// A candidate that fails is dropped and the next one is tried.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "v", rename_all = "snake_case")]
 pub enum AdapterPref {
     /// wgpu's default order for the surface (high performance first).
