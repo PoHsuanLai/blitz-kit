@@ -27,6 +27,9 @@ impl SharedFonts {
         // Shares the backing store across every clone handed to `for_document`, so a font file
         // loaded for one surface is not re-read from disk for the next.
         ctx.source_cache.make_shared();
+        // The collection too: a document built from a clone reads the one registry (system
+        // fonts enumerated once, every registered face), rather than a copy of it.
+        ctx.collection.make_shared();
         ctx.collection.register_fonts(
             Blob::new(Arc::new(blitz_dom::BULLET_FONT) as Arc<dyn AsRef<[u8]> + Send + Sync>),
             None,
