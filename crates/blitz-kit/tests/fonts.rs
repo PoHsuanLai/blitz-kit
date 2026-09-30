@@ -90,3 +90,9 @@ fn a_registered_faces_stack_measures_differently_from_system_ui() {
         "registering Inter did not change how \"Inter\" lays out ({registered} vs system-ui's {system})"
     );
 }
+
+#[test]
+fn bundled_fonts_hold_the_bullet_face_and_no_system_family() {
+    let mut context = SharedFonts::bundled(&FontFaces::default()).for_document();
+    assert_eq!(context.collection.family_names().count(), 1);
+}

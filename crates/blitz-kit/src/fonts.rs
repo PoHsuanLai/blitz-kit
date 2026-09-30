@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use blitz_dom::FontContext;
-use parley::fontique::Blob;
+use parley::fontique::{Blob, Collection, CollectionOptions, SourceCache};
 
 /// The face files a shell's design system bundles, as `&'static` TTF/OTF bytes (typically
 /// `include_bytes!` in the design-system crate).
@@ -35,6 +35,25 @@ impl SharedFonts {
             None,
         );
         SharedFonts { ctx }
+    }
+
+    /// Only Blitz's bullet glyph plus every face in `faces`: no system fonts, so a render is
+    /// reproducible whatever the machine has installed. (`system_fonts` is a construction-time
+    /// choice of the collection, not a runtime flag, so this builds its own.)
+    pub fn bundled(faces: &FontFaces) -> SharedFonts {
+        let ctx = FontContext {
+            source_cache: SourceCache::new_shared(),
+            collection: Collection::new(CollectionOptions {
+                shared: false,
+                system_fonts: false,
+            }),
+        };
+        let mut fonts = SharedFonts { ctx };
+        fonts.register(blitz_dom::BULLET_FONT);
+        for bytes in &faces.0 {
+            fonts.register(bytes);
+        }
+        fonts
     }
 
     /// [`SharedFonts::system`] plus every face in `faces`, registered once.
