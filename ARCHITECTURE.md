@@ -19,9 +19,10 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 |---|---|
 | `units` | `Bounds`, `PagePoint` (CSS px `f64`), `Scale120` (integer 120ths) |
 | `hover` | the repair for hover changes a resolve makes on its own |
-| `net` | `LocalNet`, a `NetProvider` for `data:` and absolute `file:` only |
+| `net` | `LocalNet`, a `NetProvider` for `data:` and absolute `file:` only; `LocalSource::read`, the same reads on the calling thread |
+| `data_url` | `decode`: a `data:` URL's bytes (percent, base64, URL-safe base64) |
 | `fonts` | `SharedFonts`, `FontFaces`: one `FontContext` for every document |
-| `adapter` (feature) | `AdapterFacts`, `DeviceKind`, `GpuBackend`, `AdapterPref`, `rank` |
+| `adapter` (feature) | `AdapterFacts`, `DeviceKind`, `GpuBackend`, `AdapterPref`, `rank`; `ranked`, `request_device`, `block_on`, `ADAPTER_ENV` |
 | `hit` | the element Blitz would hit at a point, lifted to its element |
 | `paint_rect` | where a laid-out box paints, through its own and its ancestors' transforms |
 | `snap` | `snap_layout`: whole device pixels for every box after a resolve |
@@ -32,12 +33,15 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 |---|---|
 | `units` | `Bounds`, `PagePoint`, `Scale120::{factor, is_whole}` |
 | `hover` | `LastMove::{Unknown, At}`, `remember`, `Shift<N>`, `HoverSync::{Unchanged, Restore, Clear}`, `decide`, `probe_points`, `repair(&mut dyn Document, &LastMove, Shift<NodeId>) -> Repaired::{Yes, No}` |
-| `net` | `LocalNet`, `LocalSource::{Data, File, Unservable}`, `LocalSource::of` |
-| `fonts` | `SharedFonts::{system, system_with, register, for_document}`, `FontFaces` |
-| `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::with_env`, `rank` |
+| `net` | `LocalNet`, `LocalSource::{Data, File, Unservable}`, `LocalSource::{of, read}` |
+| `data_url` | `decode` |
+| `fonts` | `SharedFonts::{system, system_with, bundled, register, for_document}`, `FontFaces` |
+| `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::with_env`, `rank`, `ranked`, `request_device`, `block_on`, `ADAPTER_ENV` |
 | `hit` | `element_at`, `element_of`, `is_content_element` |
 | `paint_rect` | `Affine2`, `Placed`, `painted_bounds`, `painted_rect` |
 | `snap` | `snap_layout(&mut BaseDocument, Scale120)` |
+
+`units::Scale120::from_factor` turns a viewport's `f64` scale into 120ths.
 
 `hover::repair` takes any `Document` so a Dioxus document dispatches the re-fed move into its
 components; it reads the hover state and never the layout. Tests for each module run against a
