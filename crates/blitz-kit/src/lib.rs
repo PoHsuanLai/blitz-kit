@@ -4,6 +4,7 @@
 
 #[cfg(feature = "adapter")]
 pub mod adapter;
+pub mod data_url;
 pub mod fonts;
 pub mod hit;
 pub mod hover;

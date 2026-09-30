@@ -2,13 +2,10 @@
 //! `@font-face`, `mask-image` and background images only through a net provider; a shell surface
 //! never fetches from the network, but the wallpaper is `background-image: url(file:///…)`.
 
-mod data_url;
 mod source;
 
 #[cfg(test)]
 mod tests;
-
-use std::path::Path;
 
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
 
@@ -26,12 +23,12 @@ impl NetProvider for LocalNet {
         match LocalSource::of(&request.url) {
             LocalSource::Data(raw) => {
                 tokio::task::spawn_blocking(move || {
-                    let bytes = data_url::decode(&raw).unwrap_or_default();
+                    let bytes = LocalSource::Data(raw).read().unwrap_or_default();
                     handler.bytes(resolved, Bytes::from(bytes));
                 });
             }
             LocalSource::File(path) => {
-                tokio::task::spawn_blocking(move || match read_file(&path) {
+                tokio::task::spawn_blocking(move || match LocalSource::File(path.clone()).read() {
                     Some(bytes) => handler.bytes(resolved, Bytes::from(bytes)),
                     None => eprintln!("blitz-kit: cannot read {}", path.display()),
                 });
@@ -40,9 +37,4 @@ impl NetProvider for LocalNet {
             LocalSource::Unservable => {}
         }
     }
-}
-
-/// The bytes of an absolute path; `None` when it cannot be read.
-fn read_file(path: &Path) -> Option<Vec<u8>> {
-    std::fs::read(path).ok()
 }

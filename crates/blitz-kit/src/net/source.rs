@@ -16,6 +16,17 @@ pub enum LocalSource {
 }
 
 impl LocalSource {
+    /// The bytes this source names, read on the calling thread: a `data:` URI decoded, a file
+    /// read from disk. `None` when the payload is malformed, the file unreadable or the source
+    /// unservable.
+    pub fn read(&self) -> Option<Vec<u8>> {
+        match self {
+            LocalSource::Data(raw) => crate::data_url::decode(raw),
+            LocalSource::File(path) => std::fs::read(path).ok(),
+            LocalSource::Unservable => None,
+        }
+    }
+
     /// Classify a request URL.
     pub fn of(url: &Url) -> LocalSource {
         match url.scheme() {
