@@ -1,5 +1,7 @@
 //! What is true of one adapter.
 
+use super::{PciDevice, PciVendor};
+
 /// What kind of device an adapter is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DeviceKind {
@@ -22,6 +24,8 @@ pub enum GpuBackend {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AdapterFacts {
     pub name: String,
+    pub vendor: PciVendor,
+    pub device: PciDevice,
     pub kind: DeviceKind,
     pub backend: GpuBackend,
     pub driver: String,
@@ -33,6 +37,8 @@ impl AdapterFacts {
         let info = adapter.get_info();
         AdapterFacts {
             name: info.name,
+            vendor: PciVendor(info.vendor),
+            device: PciDevice(info.device),
             kind: kind_of(info.device_type),
             backend: backend_of(info.backend),
             driver: [info.driver, info.driver_info]
