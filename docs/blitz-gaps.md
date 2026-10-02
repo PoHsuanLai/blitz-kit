@@ -155,3 +155,6 @@ system), **host** (worked around in shell-host).
 - Offscreen GPU rendering through `wgpu_context::BufferRenderer` and `vello_hybrid::Renderer`
   works; vello_hybrid fits a 60 Hz frame for the 300-emoji grid (p95 5-7 ms).
 - A scroll does not relayout: wheel plus style plus layout is 0.03 to 0.1 ms p50.
+- Adapter choice by PCI ids: `AdapterPref::Device { vendor, device }` ranks the adapter wgpu
+  reports with those ids (`AdapterInfo::vendor`/`device`) first, on both backends, so a shell can
+  render on the compositor's GPU without naming it (`blitz-kit/crates/blitz-kit/tests/adapter.rs`).

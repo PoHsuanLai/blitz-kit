@@ -12,5 +12,5 @@ mod tests;
 
 pub use device::{ADAPTER_ENV, block_on, ranked, request_device};
 pub use facts::{AdapterFacts, DeviceKind, GpuBackend};
-pub use pref::AdapterPref;
+pub use pref::{AdapterPref, PciDevice, PciVendor};
 pub use rank::rank;
