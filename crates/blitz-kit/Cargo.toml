@@ -1,6 +1,6 @@
 [package]
 name = "blitz-kit"
-description = "Portable Blitz repairs and helpers: hover sync, local net provider, shared fonts, adapter choice, painted rects, pixel snap."
+description = "Portable Blitz repairs and helpers: hover sync, local net provider, shared fonts, adapter choice, painted rects, pixel snap, the scroll engine."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -12,6 +12,8 @@ publish.workspace = true
 blitz-dom = { workspace = true }
 blitz-traits = { workspace = true }
 parley = { workspace = true }
+# `scroll::keys` names the keys a scroll responds to.
+keyboard-types = { workspace = true }
 # `net::LocalNet` reads files on the caller's blocking pool.
 tokio = { workspace = true }
 # Feature `adapter`: the ranking of GPU adapters, and `AdapterPref` (a shell's serialized setting).
@@ -21,9 +23,8 @@ serde = { workspace = true, optional = true }
 [features]
 default = []
 adapter = ["dep:wgpu", "dep:serde"]
-
-[dev-dependencies]
-keyboard-types = { workspace = true }
+# `scroll::config`'s settings read and write as a settings file's `[scroll]` table.
+settings = ["dep:serde"]
 
 [lints]
 workspace = true
