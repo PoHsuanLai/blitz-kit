@@ -2,7 +2,7 @@
 //! `scroll::engine::step` (the simulated scroller is `sim`).
 
 use super::sim::{FRAME, PAGE, Sim};
-use crate::scroll::config::{ScrollRubberBand, ScrollSettings};
+use crate::scroll::config::{ScrollRubberBand, ScrollScalar, ScrollSettings};
 use crate::scroll::engine::{
     self, Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollAnimate, ScrollIn,
 };
@@ -345,4 +345,34 @@ fn item_14_the_engine_is_still_once_settled() {
         sim.feed(ScrollIn::Frame);
     }
     assert_eq!(sim.offset(), settled, "5 s of frames move nothing");
+}
+
+#[test]
+fn a_fast_lift_glides_further_than_its_speed_says_and_a_slow_one_does_not() {
+    // name, stroke speed px/s, travel as a multiple of the unaccelerated glide
+    let cases = [("slow", 800.0, 1.0), ("fast", 4000.0, 2.0)];
+    for (name, speed, times) in cases {
+        let travel = |scroll: ScrollSettings| {
+            let mut sim = Sim::with(1000.0, 100_000.0, Elastic::Rigid, scroll);
+            sim.began(Dir::Pos, AtEdge::Inside);
+            sim.stroke(speed, 100);
+            sim.ended();
+            let released = sim.offset();
+            sim.run(5.0);
+            sim.offset() - released
+        };
+        let plain = travel(ScrollSettings {
+            fling_accel_max: ScrollScalar(1.0),
+            ..ScrollSettings::default()
+        });
+        let gained = travel(ScrollSettings::default());
+        // A glide's travel grows faster than its speed (v^1.3), so at least `times` over.
+        assert!(
+            gained >= plain * times * 0.99,
+            "{name}: {gained} vs {plain}"
+        );
+        if times == 1.0 {
+            assert!((gained - plain).abs() < 1.0, "{name}: {gained} vs {plain}");
+        }
+    }
 }

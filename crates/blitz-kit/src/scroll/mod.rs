@@ -4,10 +4,11 @@
 //! `data-overscroll` markers) and a driver that joins them for one document.
 //!
 //! Pure and table-tested: `config`, `geom`, `smooth`, `keys`, `velocity`, `momentum`, `rubber`,
-//! `latch`, `engine`, `animate`, `pad`, `cmd`, `target`. Touching a document: `doc`, `driver`.
+//! `latch`, `engine`, `animate`, `pad`, `cmd`, `target`, `accel`. Touching a document: `doc`, `driver`.
 //! A host adds only the translation from its own device events (Wayland axis frames, winit's
 //! `MouseWheel`), its clock (`time::Elapsed`) and its frame requests.
 
+pub mod accel;
 mod animate;
 pub mod cmd;
 pub mod config;

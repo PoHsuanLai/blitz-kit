@@ -145,6 +145,10 @@ pub struct ScrollSettings {
     pub rubber_band_snap_gain: ScrollScalar,
     pub wheel_detent_px: ScrollPx,
     pub wheel_burst_window_ms: ScrollMs,
+    /// The most a spun wheel multiplies a detent by (`scroll::accel`); 1 turns it off.
+    pub wheel_accel_max: ScrollScalar,
+    /// The most a fast lift multiplies the glide by (`scroll::accel`); 1 turns it off.
+    pub fling_accel_max: ScrollScalar,
     pub momentum_boost_threshold_px_s: ScrollScalar,
     pub double_scroll_grace_ms: ScrollMs,
     pub scrollbars: ScrollbarVisibility,
@@ -171,6 +175,8 @@ impl Default for ScrollSettings {
             rubber_band_snap_gain: ScrollScalar(0.31),
             wheel_detent_px: ScrollPx(60),
             wheel_burst_window_ms: ScrollMs(300),
+            wheel_accel_max: ScrollScalar(5.0),
+            fling_accel_max: ScrollScalar(2.0),
             momentum_boost_threshold_px_s: ScrollScalar(350.0),
             double_scroll_grace_ms: ScrollMs(150),
             scrollbars: ScrollbarVisibility::WhenScrolling,
@@ -200,6 +206,8 @@ mod tests {
             ("snap gain", s.rubber_band_snap_gain.get(), 0.31),
             ("detent", s.wheel_detent_px.get(), 60.0),
             ("burst", s.wheel_burst_window_ms.secs(), 0.3),
+            ("accel", s.wheel_accel_max.get(), 5.0),
+            ("fling accel", s.fling_accel_max.get(), 2.0),
             ("boost", s.momentum_boost_threshold_px_s.get(), 350.0),
             ("grace", s.double_scroll_grace_ms.secs(), 0.15),
         ];
