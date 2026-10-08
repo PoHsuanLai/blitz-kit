@@ -120,7 +120,7 @@ dependencies = [
 [[package]]
 name = "blitz-dom"
 version = "0.3.0-beta.2"
-source = "git+https://github.com/PoHsuanLai/blitz?rev=5c526bd26a8dec5c5883f501ab86f66405b0748c#5c526bd26a8dec5c5883f501ab86f66405b0748c"
+source = "git+https://github.com/PoHsuanLai/blitz?rev=e8b8e035036661d5c7990867ec3119c01cd9d227#e8b8e035036661d5c7990867ec3119c01cd9d227"
 dependencies = [
  "accesskit",
  "anyrender",
@@ -177,7 +177,7 @@ dependencies = [
 [[package]]
 name = "blitz-traits"
 version = "0.3.0-beta.2"
-source = "git+https://github.com/PoHsuanLai/blitz?rev=5c526bd26a8dec5c5883f501ab86f66405b0748c#5c526bd26a8dec5c5883f501ab86f66405b0748c"
+source = "git+https://github.com/PoHsuanLai/blitz?rev=e8b8e035036661d5c7990867ec3119c01cd9d227#e8b8e035036661d5c7990867ec3119c01cd9d227"
 dependencies = [
  "atomic_refcell",
  "bitflags",
@@ -410,7 +410,7 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 [[package]]
 name = "debug_timer"
 version = "0.1.3"
-source = "git+https://github.com/PoHsuanLai/blitz?rev=5c526bd26a8dec5c5883f501ab86f66405b0748c#5c526bd26a8dec5c5883f501ab86f66405b0748c"
+source = "git+https://github.com/PoHsuanLai/blitz?rev=e8b8e035036661d5c7990867ec3119c01cd9d227#e8b8e035036661d5c7990867ec3119c01cd9d227"
 
 [[package]]
 name = "derive_more"
@@ -2086,7 +2086,7 @@ dependencies = [
 [[package]]
 name = "stylo_taffy"
 version = "0.3.0-beta.2"
-source = "git+https://github.com/PoHsuanLai/blitz?rev=5c526bd26a8dec5c5883f501ab86f66405b0748c#5c526bd26a8dec5c5883f501ab86f66405b0748c"
+source = "git+https://github.com/PoHsuanLai/blitz?rev=e8b8e035036661d5c7990867ec3119c01cd9d227#e8b8e035036661d5c7990867ec3119c01cd9d227"
 dependencies = [
  "bitflags",
  "stylo",

@@ -26,12 +26,12 @@ blitz-kit = { path = "crates/blitz-kit" }
 # bf588142 (restyles elements whose animation was cancelled mid-way) and 1b23fbd9 (attributes carry no
 # namespace, so `[data-x=y]` matches). Move back
 # to DioxusLabs/blitz when a toolchain-bump wave finds the fix (or its equivalent) upstream.
-blitz-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "5c526bd26a8dec5c5883f501ab86f66405b0748c", default-features = false, features = ["svg", "system-fonts", "custom-widget", "accessibility"] }
-blitz-paint = { git = "https://github.com/PoHsuanLai/blitz", rev = "5c526bd26a8dec5c5883f501ab86f66405b0748c", features = ["custom-widget"] }
-blitz-traits = { git = "https://github.com/PoHsuanLai/blitz", rev = "5c526bd26a8dec5c5883f501ab86f66405b0748c" }
-dioxus-native-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "5c526bd26a8dec5c5883f501ab86f66405b0748c", default-features = false, features = ["svg", "system-fonts", "accessibility"] }
+blitz-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "e8b8e035036661d5c7990867ec3119c01cd9d227", default-features = false, features = ["svg", "system-fonts", "custom-widget", "accessibility"] }
+blitz-paint = { git = "https://github.com/PoHsuanLai/blitz", rev = "e8b8e035036661d5c7990867ec3119c01cd9d227", features = ["custom-widget"] }
+blitz-traits = { git = "https://github.com/PoHsuanLai/blitz", rev = "e8b8e035036661d5c7990867ec3119c01cd9d227" }
+dioxus-native-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "e8b8e035036661d5c7990867ec3119c01cd9d227", default-features = false, features = ["svg", "system-fonts", "accessibility"] }
 # The portable window path for apps (winit); the shell uses shell-host instead.
-dioxus-native = { git = "https://github.com/PoHsuanLai/blitz", rev = "5c526bd26a8dec5c5883f501ab86f66405b0748c", default-features = false, features = ["vello-hybrid", "svg", "system-fonts", "accessibility"] }
+dioxus-native = { git = "https://github.com/PoHsuanLai/blitz", rev = "e8b8e035036661d5c7990867ec3119c01cd9d227", default-features = false, features = ["vello-hybrid", "svg", "system-fonts", "accessibility"] }
 
 # Dioxus 0.7.x (renderer-free core; mailo is on 0.7.10).
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
