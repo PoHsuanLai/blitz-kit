@@ -57,11 +57,46 @@ impl Dir {
     }
 }
 
-/// What scrolls: the document viewport, or an element (a Blitz `NodeId`, versioned, so a removed node never aliases a new one).
+/// What scrolls: the document viewport, an element (a Blitz `NodeId`, versioned, so a removed
+/// node never aliases a new one), or a scroller inside an `iframe`'s own document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Scroller {
     Viewport,
     Node(u64),
+    Framed(Framed),
+}
+
+/// A scroller in the document of the `iframe` element `host` (a Blitz `NodeId`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Framed {
+    pub host: u64,
+    pub inside: Inside,
+}
+
+/// A scroller of a frame's own document: its viewport, or an element in it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Inside {
+    Viewport,
+    Node(u64),
+}
+
+impl Inside {
+    /// The scroller this names within its own document.
+    pub fn scroller(self) -> Scroller {
+        match self {
+            Inside::Viewport => Scroller::Viewport,
+            Inside::Node(id) => Scroller::Node(id),
+        }
+    }
+
+    /// `scroller` of a frame's document, if it is one a frame can hold (not another frame's).
+    pub fn of(scroller: Scroller) -> Option<Inside> {
+        match scroller {
+            Scroller::Viewport => Some(Inside::Viewport),
+            Scroller::Node(id) => Some(Inside::Node(id)),
+            Scroller::Framed(_) => None,
+        }
+    }
 }
 
 /// Whether a scroller stretches past its edges under the fingers (design/11 §11.3.7): only a

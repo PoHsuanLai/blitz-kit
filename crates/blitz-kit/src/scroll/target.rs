@@ -142,6 +142,24 @@ mod tests {
     }
 
     #[test]
+    fn a_steady_trickle_moves_evenly_frame_to_frame() {
+        // A high-resolution wheel: 7.5 px every 8 ms (937 px/s) for half a second.
+        let mut target = Target::default();
+        let mut deltas = Vec::new();
+        for n in 0..62u64 {
+            target = target.push(7.5, at(n * 8));
+            let (next, by) = target.advance(at(n * 8 + 4));
+            target = next;
+            deltas.push(by);
+        }
+        let steady = &deltas[10..];
+        let (lo, hi) = steady
+            .iter()
+            .fold((f64::MAX, 0.0_f64), |(lo, hi), d| (lo.min(*d), hi.max(*d)));
+        assert!(hi < 1.5 * lo, "uneven frames: {lo} to {hi}");
+    }
+
+    #[test]
     fn a_step_is_capped_at_200_ms() {
         let target = Target::default().push(5000.0, at(0));
         let (_, before) = target.advance(at(199));

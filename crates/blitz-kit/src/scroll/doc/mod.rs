@@ -11,6 +11,7 @@
 
 mod chain;
 mod element;
+mod frame;
 mod geometry;
 mod ids;
 mod markers;

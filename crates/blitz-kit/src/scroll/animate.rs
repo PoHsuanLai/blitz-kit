@@ -90,7 +90,7 @@ pub fn release_track(
         }
         _ => 0.0,
     };
-    let v0 = released.clamp(-physics.cap, physics.cap);
+    let v0 = physics.fling(released);
     let latch = track.latch;
     let raw = raw_for(&track, g, physics);
     if let Some((edge, s0)) = stretch_of(raw, g) {

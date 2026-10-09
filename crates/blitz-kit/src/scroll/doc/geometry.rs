@@ -3,6 +3,7 @@
 use blitz_dom::{BaseDocument, Node, NodeId};
 
 use super::element::{attr, body, scrolls};
+use super::frame::{in_frame, in_frame_mut};
 use crate::scroll::geom::{Elastic, Geom, Px, ScrollAxis, Scroller};
 
 /// What a node's `data-overscroll` asks for at the end of its range.
@@ -46,6 +47,9 @@ pub fn geom(doc: &BaseDocument, scroller: Scroller, axis: ScrollAxis) -> Option<
         ScrollAxis::Y => y,
     };
     match scroller {
+        Scroller::Framed(framed) => in_frame(doc, framed.host, |sub| {
+            geom(sub, framed.inside.scroller(), axis)
+        })?,
         Scroller::Viewport => {
             let root = doc.try_root_element()?;
             let layout = root.final_layout();
@@ -100,6 +104,11 @@ pub fn write(doc: &mut BaseDocument, scroller: Scroller, axis: ScrollAxis, raw: 
         ScrollAxis::Y => point.y = raw,
     };
     match scroller {
+        Scroller::Framed(framed) => {
+            in_frame_mut(doc, framed.host, |sub| {
+                write(sub, framed.inside.scroller(), axis, raw)
+            });
+        }
         Scroller::Viewport => {
             let mut scroll = doc.viewport_scroll();
             set(&mut scroll);

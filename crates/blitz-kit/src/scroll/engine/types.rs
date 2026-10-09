@@ -1,5 +1,6 @@
 //! What the engine takes, gives and remembers: its inputs, outputs and one struct per phase.
 
+use crate::scroll::accel::fling_gain;
 use crate::scroll::config::{ScrollMomentum, ScrollSettings};
 use crate::scroll::geom::{Dir, Latch, Px};
 use crate::scroll::latch::Latched;
@@ -22,9 +23,17 @@ pub struct Physics {
     pub cap: f64,
     /// A same-direction flick during a glide at least this fast (px/s) adds its speed.
     pub boost_min: f64,
+    /// A fast lift glides up to this many times as far as its own speed says (1 is off).
+    pub fling_max: f64,
 }
 
 impl Physics {
+    /// The speed a glide starts at for a lift at `speed` px/s (signed): faster lifts carry
+    /// further (`scroll::accel::fling_gain`), and no glide is faster than the cap.
+    pub fn fling(&self, speed: f64) -> f64 {
+        (speed * fling_gain(speed.abs(), self.fling_max)).clamp(-self.cap, self.cap)
+    }
+
     /// The physics `s` tunes.
     pub fn from_settings(s: &ScrollSettings) -> Physics {
         Physics {
@@ -39,6 +48,7 @@ impl Physics {
             start: s.momentum_start_px_s.get(),
             cap: s.momentum_cap_px_s.get(),
             boost_min: s.momentum_boost_threshold_px_s.get(),
+            fling_max: s.fling_accel_max.get(),
         }
     }
 }

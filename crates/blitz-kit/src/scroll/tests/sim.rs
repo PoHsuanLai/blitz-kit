@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 
-use crate::scroll::config::ScrollSettings;
+use crate::scroll::config::{ScrollScalar, ScrollSettings};
 use crate::scroll::engine::{
     self, Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollIn, ScrollOut,
 };
@@ -32,8 +32,14 @@ pub(super) struct Sim {
 }
 
 impl Sim {
+    /// design/11's numbers are the engine without the fling gain (`scroll::accel`), which has
+    /// its own tests below.
     pub(super) fn new(offset: f64, max: f64, elastic: Elastic) -> Sim {
-        Sim::with(offset, max, elastic, ScrollSettings::default())
+        let plain = ScrollSettings {
+            fling_accel_max: ScrollScalar(1.0),
+            ..ScrollSettings::default()
+        };
+        Sim::with(offset, max, elastic, plain)
     }
 
     pub(super) fn with(offset: f64, max: f64, elastic: Elastic, scroll: ScrollSettings) -> Sim {
