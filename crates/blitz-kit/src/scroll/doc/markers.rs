@@ -3,10 +3,10 @@
 
 use blitz_dom::{BaseDocument, Node};
 
-use super::chain::page_point;
+use super::chain::{chain_at, page_point};
 use super::element::{ancestors, attr, body, element_under, is_root, scrolls};
 use super::geometry::geom;
-use crate::scroll::geom::{ScrollAxis, Scroller, ViewPoint};
+use crate::scroll::geom::{Elastic, ScrollAxis, Scroller, ViewPoint};
 
 /// Whether a wheel over a point goes to the engine or, raw, to a capturing element.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,6 +14,17 @@ pub enum WheelRoute {
     Engine,
     /// An element on the chain carries `data-wheel="capture"`.
     Capture,
+    /// Nothing under the pointer can scroll, on either axis: the wheel is the document's.
+    Nothing,
+}
+
+/// Whether any scroller under `at` has room to move, or stretch, on either axis.
+fn scrollable(doc: &BaseDocument, at: ViewPoint) -> bool {
+    [ScrollAxis::X, ScrollAxis::Y].into_iter().any(|axis| {
+        chain_at(doc, at, axis)
+            .iter()
+            .any(|c| c.geom.max.0 > 0.0 || c.geom.elastic == Elastic::Elastic)
+    })
 }
 
 /// What the keyboard focus means for scroll keys (design/11 §11.3.10).
@@ -37,9 +48,10 @@ pub fn wheel_route(doc: &BaseDocument, at: ViewPoint) -> WheelRoute {
         .into_iter()
         .flat_map(|id| ancestors(doc, id))
         .any(|node| attr(node, "data-wheel") == Some("capture"));
-    match captured {
-        true => WheelRoute::Capture,
-        false => WheelRoute::Engine,
+    match (captured, scrollable(doc, at)) {
+        (true, _) => WheelRoute::Capture,
+        (false, true) => WheelRoute::Engine,
+        (false, false) => WheelRoute::Nothing,
     }
 }
 

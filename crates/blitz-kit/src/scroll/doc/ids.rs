@@ -37,6 +37,8 @@ pub fn container_of(
 /// own scroll; that is added back here.
 pub fn area(doc: &BaseDocument, scroller: Scroller) -> Option<Area> {
     match scroller {
+        // A frame's boxes are not aimed at by programmatic scrolls.
+        Scroller::Framed(_) => None,
         Scroller::Viewport => {
             let (w, h) = doc.viewport().logical_size();
             Some(Area {
