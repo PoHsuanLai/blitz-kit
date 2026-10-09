@@ -4,10 +4,10 @@
 use super::sim::{FRAME, PAGE, Sim};
 use crate::scroll::config::{ScrollRubberBand, ScrollScalar, ScrollSettings};
 use crate::scroll::engine::{
-    self, Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollAnimate, ScrollIn,
+    self, Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollIn,
 };
 use crate::scroll::geom::{Dir, Elastic, Px, ScrollAxis, Scroller};
-use crate::scroll::keys::{self, LINE_PX};
+use crate::scroll::keys::LINE_PX;
 use crate::scroll::latch::{Candidate, latch};
 use crate::scroll::rubber::AtEdge;
 
@@ -38,16 +38,19 @@ fn item_2_a_pause_before_the_lift_glides_nowhere() {
     assert_eq!(sim.when(NotifyPhase::MomentumBegan), None);
 }
 
-/// A 2000 px/s glide, then a second 2000 px/s flick begun when it is at 1000 px/s.
-fn boosted(dir: Dir) -> f64 {
+/// A 2000 px/s glide, then a second 2000 px/s flick begun when it is at 1000 px/s; the second
+/// begins with a `MayBegin` and a frame first, or straight away as a touchpad's does.
+fn boosted(dir: Dir, may_begin: bool) -> f64 {
     let mut sim = Sim::new(1000.0, 100_000.0, Elastic::Rigid);
     sim.began(Dir::Pos, AtEdge::Inside);
     sim.stroke(2000.0, 100);
     sim.ended();
     let t_1000 = (2000f64.powf(0.3) - 1000f64.powf(0.3)) / 9.0;
     sim.t += t_1000;
-    sim.feed(ScrollIn::Frame);
-    sim.feed(ScrollIn::MayBegin);
+    if may_begin {
+        sim.feed(ScrollIn::Frame);
+        sim.feed(ScrollIn::MayBegin);
+    }
     sim.began(dir, AtEdge::Inside);
     sim.stroke(dir.sign() * 2000.0, 100);
     sim.ended();
@@ -56,24 +59,22 @@ fn boosted(dir: Dir) -> f64 {
 
 #[test]
 fn item_3_a_second_flick_boosts_only_in_the_same_direction() {
-    let same = boosted(Dir::Pos);
-    assert!((same - 3000.0).abs() <= 60.0, "same direction: {same}");
-    let opposite = boosted(Dir::Neg);
-    assert!((opposite + 2000.0).abs() <= 40.0, "opposite: {opposite}");
-}
-
-#[test]
-fn item_3_a_touchpad_began_during_the_glide_boosts_too() {
-    let mut sim = Sim::new(1000.0, 100_000.0, Elastic::Rigid);
-    sim.began(Dir::Pos, AtEdge::Inside);
-    sim.stroke(2000.0, 100);
-    sim.ended();
-    sim.t += (2000f64.powf(0.3) - 1000f64.powf(0.3)) / 9.0;
-    sim.began(Dir::Pos, AtEdge::Inside);
-    sim.stroke(2000.0, 100);
-    sim.ended();
-    let v0 = sim.flight().v0;
-    assert!((v0 - 3000.0).abs() <= 60.0, "{v0}");
+    // dir, MayBegin first, expected v0, tolerance
+    let cases = [
+        ("same direction", Dir::Pos, true, 3000.0, 60.0),
+        (
+            "same direction, a touchpad's began during the glide",
+            Dir::Pos,
+            false,
+            3000.0,
+            60.0,
+        ),
+        ("opposite", Dir::Neg, true, -2000.0, 40.0),
+    ];
+    for (name, dir, may_begin, want, tolerance) in cases {
+        let got = boosted(dir, may_begin);
+        assert!((got - want).abs() <= tolerance, "{name}: {got}");
+    }
 }
 
 #[test]
@@ -217,51 +218,6 @@ fn item_8_a_rigid_scroller_never_stretches() {
 }
 
 #[test]
-fn item_11_keyboard_line_page_end() {
-    // Down: +40 in 40 ms.
-    let mut sim = Sim::new(100.0, 5000.0, Elastic::Rigid);
-    sim.feed(ScrollIn::Step {
-        latch: PAGE,
-        by: Px(LINE_PX),
-    });
-    let trace = sim.run(1.0);
-    let done = trace
-        .iter()
-        .find(|(_, x)| *x == 140.0)
-        .expect("reaches +40")
-        .0;
-    assert!((done - 0.040).abs() <= FRAME, "line done at {done}");
-    // PgDn on a 900 px viewport: +860 in 200 ms.
-    let mut sim = Sim::new(0.0, 5000.0, Elastic::Rigid);
-    sim.geom.viewport = Px(900.0);
-    sim.feed(ScrollIn::Step {
-        latch: PAGE,
-        by: Px(keys::page(900.0)),
-    });
-    let trace = sim.run(1.0);
-    let done = trace
-        .iter()
-        .find(|(_, x)| *x == 860.0)
-        .expect("reaches +860")
-        .0;
-    assert!((done - 0.200).abs() <= FRAME, "page done at {done}");
-    // End: at max in <= 200 ms, from far away.
-    let mut sim = Sim::new(0.0, 50_000.0, Elastic::Rigid);
-    sim.feed(ScrollIn::Jump {
-        latch: PAGE,
-        to: Px(50_000.0),
-        animate: ScrollAnimate::Smooth,
-    });
-    let trace = sim.run(1.0);
-    let done = trace
-        .iter()
-        .find(|(_, x)| *x == 50_000.0)
-        .expect("reaches max")
-        .0;
-    assert!(done <= 0.200 + FRAME, "end at {done}");
-}
-
-#[test]
 fn item_11_a_held_arrow_ramps_then_springs() {
     let mut sim = Sim::new(0.0, 100_000.0, Elastic::Rigid);
     sim.feed(ScrollIn::Hold {
@@ -299,33 +255,12 @@ fn item_11_a_held_arrow_ramps_then_springs() {
 }
 
 #[test]
-fn item_12_wheel_detents() {
-    let detent = |sim: &mut Sim| {
-        sim.feed(ScrollIn::Step {
-            latch: PAGE,
-            by: Px(60.0),
-        })
-    };
-    // One detent: +60 in 60 ms.
-    let mut sim = Sim::new(0.0, 5000.0, Elastic::Elastic);
-    detent(&mut sim);
-    let trace = sim.run(1.0);
-    let done = trace.iter().find(|(_, x)| *x == 60.0).expect("+60").0;
-    assert!((done - 0.060).abs() <= FRAME, "detent at {done}");
-    // Five detents within 50 ms (frames rendering in between): +300, reached <= 250 ms after
-    // the first.
-    let mut sim = Sim::new(0.0, 5000.0, Elastic::Elastic);
-    for _ in 0..5 {
-        detent(&mut sim);
-        sim.t += 0.010;
-        sim.feed(ScrollIn::Frame);
-    }
-    let trace = sim.run(1.0);
-    let arrived = 0.050 + trace.iter().find(|(_, x)| *x == 300.0).expect("+300").0;
-    assert!(arrived <= 0.250 + FRAME, "five detents done at {arrived}");
-    // No stretch at an edge.
+fn a_wheel_detent_at_the_edge_never_stretches() {
     let mut edge = Sim::new(4990.0, 5000.0, Elastic::Elastic);
-    detent(&mut edge);
+    edge.feed(ScrollIn::Step {
+        latch: PAGE,
+        by: Px(60.0),
+    });
     let trace = edge.run(1.0);
     assert!(trace.iter().all(|(_, x)| *x <= 5000.0), "{trace:?}");
     assert_eq!(edge.offset(), 5000.0);

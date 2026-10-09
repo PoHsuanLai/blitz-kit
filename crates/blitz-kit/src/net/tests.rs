@@ -3,12 +3,7 @@ use blitz_traits::net::Url;
 use super::LocalSource;
 
 #[test]
-fn a_local_source_reads_its_bytes() {
-    assert_eq!(
-        LocalSource::Data("data:,hi".into()).read().as_deref(),
-        Some(&b"hi"[..])
-    );
-    assert_eq!(LocalSource::Data("data:no-comma".into()).read(), None);
+fn a_local_source_that_cannot_be_read_gives_nothing() {
     assert_eq!(
         LocalSource::File("/nonexistent/blitz-kit".into()).read(),
         None

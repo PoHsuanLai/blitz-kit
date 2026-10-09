@@ -74,38 +74,48 @@ mod tests {
         Elapsed(Duration::from_millis(ms))
     }
 
-    /// The gains of `count` clicks of `steps` each, `gap_ms` apart.
-    fn burst(count: u64, steps: f64, gap_ms: u64) -> Vec<f64> {
+    /// The gains of `count` clicks of `steps` each, `gap_ms` apart, under the cap `max`.
+    fn burst_capped(count: u64, steps: f64, gap_ms: u64, max: f64) -> Vec<f64> {
         let mut accel = Accel::default();
         (0..count)
             .map(|n| {
-                let (next, gain) = accel.feed(steps, at(n * gap_ms), MAX);
+                let (next, gain) = accel.feed(steps, at(n * gap_ms), max);
                 accel = next;
                 gain
             })
             .collect()
     }
 
-    #[test]
-    fn a_first_click_and_a_reading_pace_are_not_accelerated() {
-        assert_eq!(burst(1, 1.0, 0), vec![1.0]);
-        // 4 clicks a second.
-        assert!(burst(8, 1.0, 250).iter().all(|g| *g == 1.0));
-        // 5 a second is the edge.
-        assert!(burst(8, 1.0, 200).iter().all(|g| *g == 1.0));
+    /// The gains of `count` clicks of `steps` each, `gap_ms` apart.
+    fn burst(count: u64, steps: f64, gap_ms: u64) -> Vec<f64> {
+        burst_capped(count, steps, gap_ms, MAX)
     }
 
     #[test]
-    fn a_spun_wheel_gains_with_its_speed_up_to_the_cap() {
-        // name, clicks a second (gap ms), expected gain at the end of 30 clicks (low, high)
+    fn a_click_train_gains_with_its_speed_up_to_the_cap() {
+        // name, clicks, gap ms, cap, the last gain within `low..=high`
         let cases = [
-            ("10 a second", 100, 2.0, 2.4),
-            ("20 a second", 50, 4.0, 5.0),
-            ("a spin of 100 a second", 10, 5.0, 5.0),
+            ("a first click", 1, 0, MAX, 1.0, 1.0),
+            ("4 a second is a reading pace", 8, 250, MAX, 1.0, 1.0),
+            ("5 a second is the edge", 8, 200, MAX, 1.0, 1.0),
+            ("10 a second", 30, 100, MAX, 2.4, 2.0),
+            ("20 a second", 30, 50, MAX, 5.0, 4.0),
+            ("a spin of 100 a second", 30, 10, MAX, 5.0, 5.0),
+            ("a cap of one turns it off", 30, 20, 1.0, 1.0, 1.0),
+            (
+                "coalesced events do not read as infinite",
+                2,
+                0,
+                MAX,
+                MAX,
+                1.0,
+            ),
         ];
-        for (name, gap, low, high) in cases {
-            let last = *burst(30, 1.0, gap).last().unwrap();
+        for (name, count, gap, cap, high, low) in cases {
+            let gains = burst_capped(count, 1.0, gap, cap);
+            let last = *gains.last().unwrap();
             assert!(last >= low && last <= high, "{name}: {last}");
+            assert!(gains.iter().all(|g| *g >= 1.0), "{name}: {gains:?}");
         }
     }
 
@@ -138,25 +148,6 @@ mod tests {
         }
         let whole = *burst(30, 1.0, 100).last().unwrap();
         assert!((gain - whole).abs() < 0.2, "{gain} vs {whole}");
-    }
-
-    #[test]
-    fn a_cap_of_one_turns_it_off() {
-        let mut accel = Accel::default();
-        let mut gain = 0.0;
-        for n in 0..30 {
-            let (next, g) = accel.feed(1.0, at(n * 20), 1.0);
-            accel = next;
-            gain = g;
-        }
-        assert_eq!(gain, 1.0);
-    }
-
-    #[test]
-    fn coalesced_events_do_not_read_as_infinite() {
-        let (accel, _) = Accel::default().feed(1.0, at(0), MAX);
-        let (_, gain) = accel.feed(1.0, at(0), MAX);
-        assert!(gain <= MAX);
     }
 
     #[test]

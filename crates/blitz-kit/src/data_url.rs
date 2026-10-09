@@ -97,6 +97,10 @@ mod tests {
         ),
         ("data:text/plain;base64,aGVsbG8=", Some(b"hello")),
         ("DATA:;BASE64,aGVsbG8", Some(b"hello")),
+        (
+            "data:image/png;base64,iVBORw0KGgo=",
+            Some(b"\x89PNG\r\n\x1a\n"),
+        ),
         ("data:;base64,aGk=", Some(b"hi")),
         ("data:;base64,aA==", Some(b"h")),
         ("data:;base64,aGVs bG8=", Some(b"hello")),
@@ -115,12 +119,5 @@ mod tests {
         for (url, expected) in CASES {
             assert_eq!(decode(url).as_deref(), *expected, "{url:?} decoded wrongly");
         }
-    }
-
-    #[test]
-    fn decodes_the_grain_png_header() {
-        // The first bytes of any PNG, base64-encoded as the grain's data: URL is.
-        let png = decode("data:image/png;base64,iVBORw0KGgo=");
-        assert_eq!(png.as_deref(), Some(&b"\x89PNG\r\n\x1a\n"[..]));
     }
 }

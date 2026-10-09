@@ -142,6 +142,11 @@ fn the_bands_stretch_follows_the_bounded_curve() {
         ..ScrollSettings::default()
     })
     .band;
+    let off = Physics::from_settings(&ScrollSettings {
+        rubber_band: ScrollRubberBand::Off,
+        ..ScrollSettings::default()
+    })
+    .band;
     // name, band, overscroll px, viewport px, began, stretch px
     let cases = [
         ("none", bounded, 0.0, 1000.0, AtEdge::Inside, 0.0),
@@ -173,6 +178,8 @@ fn the_bands_stretch_follows_the_bounded_curve() {
             AtEdge::Inside,
             50.0,
         ),
+        ("linear, 100 px", linear, 100.0, 1000.0, AtEdge::Inside, 5.0),
+        ("off", off, 1000.0, 1000.0, AtEdge::Inside, 0.0),
     ];
     for (name, band, over, view, began, want) in cases {
         let got = band.stretch(over, view, began);
@@ -230,10 +237,11 @@ fn a_page_key_moves_by_the_page_rule_in_up_to_200_ms() {
 
 #[test]
 fn the_keys_steps_are_lines_pages_and_edges() {
-    // name, the step, distance px from the start of a 5000 px scroller at 1000, time bound s
+    // name, scroller length px, the step, distance px from the start at 1000, time bound s
     let cases = [
         (
             "an arrow is a line",
+            5000.0,
             ScrollIn::Step {
                 latch: PAGE,
                 by: Px(keys::LINE_PX),
@@ -243,6 +251,7 @@ fn the_keys_steps_are_lines_pages_and_edges() {
         ),
         (
             "an arrow up",
+            5000.0,
             ScrollIn::Step {
                 latch: PAGE,
                 by: Px(-keys::LINE_PX),
@@ -252,6 +261,7 @@ fn the_keys_steps_are_lines_pages_and_edges() {
         ),
         (
             "Home",
+            5000.0,
             ScrollIn::Jump {
                 latch: PAGE,
                 to: Px(0.0),
@@ -262,6 +272,7 @@ fn the_keys_steps_are_lines_pages_and_edges() {
         ),
         (
             "End",
+            5000.0,
             ScrollIn::Jump {
                 latch: PAGE,
                 to: Px(5000.0),
@@ -270,9 +281,20 @@ fn the_keys_steps_are_lines_pages_and_edges() {
             4000.0,
             0.200 + FRAME,
         ),
+        (
+            "End from far away",
+            50_000.0,
+            ScrollIn::Jump {
+                latch: PAGE,
+                to: Px(50_000.0),
+                animate: ScrollAnimate::Smooth,
+            },
+            49_000.0,
+            0.200 + FRAME,
+        ),
     ];
-    for (name, step, distance, by) in cases {
-        let mut sim = Sim::new(1000.0, 5000.0, Elastic::Rigid);
+    for (name, max, step, distance, by) in cases {
+        let mut sim = Sim::new(1000.0, max, Elastic::Rigid);
         sim.feed(step);
         let trace = sim.run(1.0);
         let (done, _) = *trace.last().expect("an animation ran");
