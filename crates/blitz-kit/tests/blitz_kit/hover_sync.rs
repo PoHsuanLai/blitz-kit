@@ -6,7 +6,7 @@
 //! recording document dispatches into a log where a Dioxus document would dispatch into
 //! components.
 
-mod support;
+use crate::support;
 
 use std::cell::RefCell;
 use std::rc::Rc;

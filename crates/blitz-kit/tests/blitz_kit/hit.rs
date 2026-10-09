@@ -1,6 +1,6 @@
 //! What a point hits, lifted to its element, in a real document.
 
-mod support;
+use crate::support;
 
 use blitz_dom::{LocalName, Namespace, QualName};
 use blitz_kit::hit::{element_at, element_of, is_content_element};

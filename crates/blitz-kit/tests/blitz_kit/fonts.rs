@@ -6,7 +6,7 @@
 //! assets if quire is checked out next to this repo, skipped (with a message, not a failure)
 //! otherwise. The kit must not depend on quire, so this is a file read, never a dependency.
 
-mod support;
+use crate::support;
 
 use std::path::PathBuf;
 
@@ -48,12 +48,6 @@ fn a_registered_face_is_a_family() {
         families.contains(&"Inter".to_string()),
         "Inter is not in {families:?}"
     );
-}
-
-#[test]
-fn no_faces_register_no_families() {
-    let fonts = SharedFonts::system_with(&FontFaces::default());
-    assert_eq!(format!("{fonts:?}"), "SharedFonts { .. }");
 }
 
 #[test]

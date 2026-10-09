@@ -1,7 +1,7 @@
 //! Pixel snapping in a real document: at a fractional scale every box lands on the device grid,
 //! and at a whole scale nothing moves.
 
-mod support;
+use crate::support;
 
 use blitz_kit::snap::snap_layout;
 use blitz_kit::units::Scale120;

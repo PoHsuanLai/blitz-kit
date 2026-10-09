@@ -1,7 +1,7 @@
 //! An element's painted rectangle in a real document: its layout box carried through its own
 //! and its ancestors' CSS transforms, at whole and fractional scales.
 
-mod support;
+use crate::support;
 
 use blitz_kit::paint_rect::painted_rect;
 use blitz_kit::units::Bounds;
