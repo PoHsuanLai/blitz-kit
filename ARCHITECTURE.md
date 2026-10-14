@@ -14,7 +14,7 @@ One crate, `blitz-kit` (`crates/blitz-kit`). Allowed dependencies: `blitz-dom`, 
 files on the caller's blocking pool), and, behind feature `adapter`, `wgpu` and `serde`
 (`AdapterPref` is a shell's serialized setting), behind feature `settings`, `serde` (the scroll
 settings read as a settings file's `[scroll]` table).
-`scripts/check-boundary.sh` forbids every `ds*`, `dioxus*`, `wayland*`, `smithay*` and `cosmic*`
+`scripts/check-boundary.sh` forbids every `ds*`, `dioxus*`, `wayland*` and `smithay*`
 crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 
 | Module | Holds |

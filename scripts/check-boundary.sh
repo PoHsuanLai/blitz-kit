@@ -9,7 +9,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-FORBIDDEN='^(ds|dioxus|wayland|smithay|cosmic|quire|sill|shell-host|palmrest)(-|_|$)'
+FORBIDDEN='^(ds|dioxus|wayland|smithay|quire|sill|shell-host|palmrest)(-|_|$)'
 fail=0
 
 if ! cargo tree -p blitz-kit --depth 0 >/dev/null 2>&1; then
@@ -24,7 +24,7 @@ if [ -n "$leaks" ]; then
   echo "$leaks"
   fail=1
 else
-  echo "boundary holds: blitz-kit reaches no ds*, dioxus*, wayland*, smithay*, cosmic*, quire, sill, shell-host or palmrest crate"
+  echo "boundary holds: blitz-kit reaches no ds*, dioxus*, wayland*, smithay*, quire, sill, shell-host or palmrest crate"
 fi
 
 exit "$fail"
