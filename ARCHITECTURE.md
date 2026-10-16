@@ -21,7 +21,7 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 |---|---|
 | `units` | `Bounds`, `PagePoint` (CSS px `f64`), `Scale120` (integer 120ths) |
 | `hover` | the repair for hover changes a resolve makes on its own |
-| `net` | `LocalNet`, a `NetProvider` for `data:` and absolute `file:` only; `LocalSource::read`, the same reads on the calling thread |
+| `net` | `LocalNet`, a `NetProvider` for `data:` and absolute `file:` only, files only inside the `FileRoots` the consumer passes, regular files only, at most `MAX_RESOURCE_BYTES`; `LocalSource::{read, read_within}`, the same reads on the calling thread |
 | `data_url` | `decode`: a `data:` URL's bytes (percent, base64, URL-safe base64) |
 | `fonts` | `SharedFonts`, `FontFaces`: one `FontContext` for every document |
 | `adapter` (feature) | `AdapterFacts`, `DeviceKind`, `GpuBackend`, `AdapterPref`, `PciVendor`, `PciDevice`, `rank`; `ranked`, `request_device`, `block_on`, `ADAPTER_ENV` |
@@ -37,7 +37,7 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 |---|---|
 | `units` | `Bounds`, `PagePoint`, `Scale120::{factor, is_whole}` |
 | `hover` | `LastMove::{Unknown, At}`, `remember`, `Shift<N>`, `HoverSync::{Unchanged, Restore, Clear}`, `decide`, `probe_points`, `repair(&mut dyn Document, &LastMove, Shift<NodeId>) -> Repaired::{Yes, No}` |
-| `net` | `LocalNet`, `LocalSource::{Data, File, Unservable}`, `LocalSource::{of, read}` |
+| `net` | `LocalNet::new(FileRoots)`, `FileRoots::new`, `MAX_RESOURCE_BYTES`, `LocalSource::{Data, File, Unservable}`, `LocalSource::{of, read, read_within}` |
 | `data_url` | `decode` |
 | `fonts` | `SharedFonts::{system, system_with, bundled, register, for_document}`, `FontFaces` |
 | `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::{with_env, Device}`, `PciVendor`, `PciDevice`, `rank`, `ranked`, `request_device`, `block_on`, `ADAPTER_ENV` |
