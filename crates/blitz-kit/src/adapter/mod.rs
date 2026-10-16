@@ -10,7 +10,10 @@ mod rank;
 #[cfg(test)]
 mod tests;
 
-pub use device::{ADAPTER_ENV, block_on, ranked, request_device};
+pub use device::{
+    ADAPTER_ENV, DeviceError, DeviceHealth, Health, WatchedDevice, block_on, block_on_timeout,
+    ranked, request_device, request_watched_device,
+};
 pub use facts::{AdapterFacts, DeviceKind, GpuBackend};
 pub use pref::{AdapterPref, PciDevice, PciVendor};
 pub use rank::rank;

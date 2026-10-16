@@ -24,7 +24,7 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 | `net` | `LocalNet`, a `NetProvider` for `data:` and absolute `file:` only, files only inside the `FileRoots` the consumer passes, regular files only, at most `MAX_RESOURCE_BYTES`; `LocalSource::{read, read_within}`, the same reads on the calling thread |
 | `data_url` | `decode`: a `data:` URL's bytes (percent, base64, URL-safe base64) |
 | `fonts` | `SharedFonts`, `FontFaces`: one `FontContext` for every document |
-| `adapter` (feature) | `AdapterFacts`, `DeviceKind`, `GpuBackend`, `AdapterPref`, `PciVendor`, `PciDevice`, `rank`; `ranked`, `request_device`, `block_on`, `ADAPTER_ENV` |
+| `adapter` (feature) | `AdapterFacts`, `DeviceKind`, `GpuBackend`, `AdapterPref`, `PciVendor`, `PciDevice`, `rank`; `ranked`, `request_device` (its wgpu errors are logged, not panics), `request_watched_device` (with a deadline, returning the device's `DeviceHealth`), `block_on`, `block_on_timeout`, `ADAPTER_ENV` |
 | `hit` | the element Blitz would hit at a point, lifted to its element |
 | `paint_rect` | where a laid-out box paints, through its own and its ancestors' transforms |
 | `snap` | `snap_layout`: whole device pixels for every box after a resolve |
@@ -40,7 +40,7 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 | `net` | `LocalNet::new(FileRoots)`, `FileRoots::new`, `MAX_RESOURCE_BYTES`, `LocalSource::{Data, File, Unservable}`, `LocalSource::{of, read, read_within}` |
 | `data_url` | `decode` |
 | `fonts` | `SharedFonts::{system, system_with, bundled, register, for_document}`, `FontFaces` |
-| `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::{with_env, Device}`, `PciVendor`, `PciDevice`, `rank`, `ranked`, `request_device`, `block_on`, `ADAPTER_ENV` |
+| `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::{with_env, Device}`, `PciVendor`, `PciDevice`, `rank`, `ranked`, `request_device`, `request_watched_device`, `WatchedDevice`, `DeviceHealth`, `Health`, `DeviceError`, `block_on`, `block_on_timeout`, `ADAPTER_ENV` |
 | `hit` | `element_at`, `element_of`, `is_content_element` |
 | `paint_rect` | `Affine2`, `Placed`, `painted_bounds`, `painted_rect` |
 | `snap` | `snap_layout(&mut BaseDocument, Scale120)` |
