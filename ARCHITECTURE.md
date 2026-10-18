@@ -58,7 +58,7 @@ clock and its frame requests.
 |---|---|
 | Pure physics, table-tested, time passed in | `config` (`ScrollSettings` and its value types; serde with feature `settings`), `geom` (`Px`, `ScrollAxis`, `Dir`, `Scroller`, `Geom`, `Latch`, `Area`, `ViewPoint`), `smooth` (the 1000 px/s, 200 ms, `--e-out` step), `velocity` (release velocity), `momentum` (the glide), `rubber` (stretch and snap-back), `keys` (`ScrollKey`, `scroll_key`, `page`, the held arrow's ramp and spring), `latch` (`latch`, `latch_rigid`, `AxisLock`, `WheelBurst`), `pad` (`PointerScroll`, `Pad`, `PadEvent`: a touchpad gesture from pans and a stop), `engine` (`Engine`, `ScrollIn`, `ScrollOut`, `Physics`, `step`), `target` (`Target`: the smooth step for a consumer that owns its offset), `cmd` (`ScrollCmd`, `into_view`), `time` (`Elapsed`), `tuning` (`Tuning`, `Env`) |
 | The document side | `doc` (`chain_at`, `geom`, `write`, `wheel_route`, `key_focus`, `scroller_by_id`, `container_of`, `area`, `WheelRoute`, `KeyFocus`): the scrollers under a point, their geometry, raw offset writes and the `data-wheel`, `data-overscroll` and `data-keys` markers |
-| The driver | `driver::ScrollDriver::{run, frame, pointer, detents, begin, key, key_up, command, motion}`, `Moves`, `Moved`, `Claim`, `KeyUse`, `KeyRepeat`: the engine applied to one document |
+| The driver | `driver::ScrollDriver::{run, frame, pointer, detents, begin, key, key_up, command, motion}`, `Moves`, `Moved`, `Claim`, `KeyRepeat`: the engine applied to one document |
 
 Ownership (design/11 §11.3.1): the host does not let Blitz's own scroll act; it writes raw offsets
 every frame and asks for frames while `ScrollDriver::motion` says `Animating`. An element marked

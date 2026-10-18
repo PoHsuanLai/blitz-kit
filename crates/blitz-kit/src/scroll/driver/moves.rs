@@ -79,13 +79,6 @@ impl Moves {
     }
 }
 
-/// Whether a key reached the engine or belongs to the document.
-#[derive(Debug, Clone, PartialEq)]
-pub enum KeyUse {
-    Scrolled(Moves),
-    Passed,
-}
-
 /// Whether a scroll key is a fresh press or a repeat of one held.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyRepeat {

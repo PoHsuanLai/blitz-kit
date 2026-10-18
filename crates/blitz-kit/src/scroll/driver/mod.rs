@@ -18,7 +18,7 @@ use crate::scroll::latch::WheelBurst;
 use crate::scroll::pad::Pad;
 use crate::scroll::tuning::Env;
 
-pub use moves::{Claim, KeyRepeat, KeyUse, Moved, Moves};
+pub use moves::{Claim, KeyRepeat, Moved, Moves};
 
 /// One document's scroll state: the engine, the touchpad gesture and wheel burst being
 /// tracked, and the scroller the last gesture latched (the keyboard's target while under the

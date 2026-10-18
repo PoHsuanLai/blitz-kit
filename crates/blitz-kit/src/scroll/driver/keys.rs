@@ -2,7 +2,7 @@
 
 use blitz_dom::BaseDocument;
 
-use super::{KeyRepeat, KeyUse, Moves, ScrollDriver};
+use super::{KeyRepeat, Moves, ScrollDriver};
 use crate::scroll::doc::{self, KeyFocus};
 use crate::scroll::engine::{ScrollAnimate, ScrollIn};
 use crate::scroll::geom::{Latch, Px, ScrollAxis, Scroller, ViewPoint};
@@ -10,8 +10,9 @@ use crate::scroll::keys::{self, ScrollKey};
 use crate::scroll::tuning::Env;
 
 impl ScrollDriver {
-    /// A scroll key went down (`KeyRepeat::First`) or repeated. `Passed` (the document's) when
-    /// something on the focus path handles keys or nothing around the focus scrolls.
+    /// A scroll key went down (`KeyRepeat::First`) or repeated. The moves say `Claim::Left`
+    /// (the key is the document's) when something on the focus path handles keys or nothing
+    /// around the focus scrolls, and `Claim::Took` when the engine took it.
     pub fn key(
         &mut self,
         doc: &mut BaseDocument,
@@ -19,19 +20,19 @@ impl ScrollDriver {
         repeat: KeyRepeat,
         pointer: Option<ViewPoint>,
         env: Env<'_>,
-    ) -> KeyUse {
+    ) -> Moves {
         let axis = key.axis();
         let scroller = match doc::key_focus(doc, axis) {
-            KeyFocus::Document => return KeyUse::Passed,
+            KeyFocus::Document => return Moves::none(),
             KeyFocus::Scroller(scroller) => Some(scroller),
             KeyFocus::Free => self.key_target(doc, axis, pointer),
         };
         let Some(scroller) = scroller else {
-            return KeyUse::Passed;
+            return Moves::none();
         };
         let latch = Latch { scroller, axis };
         let Some(geom) = doc::geom(doc, scroller, axis) else {
-            return KeyUse::Scrolled(Moves::none());
+            return Moves::none().took();
         };
         let input = match (key, repeat) {
             (ScrollKey::Line(_, dir), KeyRepeat::First) => ScrollIn::Step {
@@ -52,7 +53,7 @@ impl ScrollDriver {
                 animate: ScrollAnimate::Smooth,
             },
         };
-        KeyUse::Scrolled(self.run(doc, input, env).took())
+        self.run(doc, input, env).took()
     }
 
     /// The keyboard's scroller when nothing has focus: the last gesture's scroller if it is
