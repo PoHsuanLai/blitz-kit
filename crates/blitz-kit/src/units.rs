@@ -26,6 +26,10 @@ const MIN_WIRE_120THS: u32 = 30;
 /// logical pixel.
 const MAX_WIRE_120THS: u32 = 1200;
 
+/// The largest whole `wl_surface.preferred_buffer_scale` [`Scale120::from_integer_factor`]
+/// accepts.
+const MAX_INTEGER_FACTOR: i32 = 10;
+
 /// A fractional scale in 120ths (`180` is 1.5), the unit Wayland's `wp_fractional_scale` uses.
 /// The one type for it below the design system: shell-host's surface scale and the kit's pixel
 /// snap are this value, so a host passes it straight through.
@@ -41,6 +45,13 @@ impl Scale120 {
     /// beyond any device.
     pub fn from_wire(value: u32) -> Scale120 {
         Scale120(value.clamp(MIN_WIRE_120THS, MAX_WIRE_120THS))
+    }
+
+    /// The scale of a whole buffer-scale factor (`wl_output.scale`, `wl_surface`'s
+    /// `scale_factor_changed`), at least 1 and at most 10.
+    pub fn from_integer_factor(factor: i32) -> Scale120 {
+        let whole = u32::try_from(factor.clamp(1, MAX_INTEGER_FACTOR)).unwrap_or(1);
+        Scale120(whole * Scale120::ONE.0)
     }
 
     /// The nearest 120th to a device-pixels-per-logical-pixel `factor` (`1.5` is `180`).
