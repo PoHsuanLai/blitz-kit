@@ -2,6 +2,7 @@ use blitz_traits::events::{
     BlitzPointerEvent, BlitzPointerId, BlitzWheelDelta, BlitzWheelEvent, MouseEventButton,
     MouseEventButtons, PointerCoords, PointerDetails, UiEvent,
 };
+use blitz_dom::NodeId;
 use keyboard_types::Modifiers;
 
 use super::*;
@@ -50,15 +51,20 @@ fn known() -> LastMove {
 
 /// A 100 x 40 box at (10, 10) whose element is 1, covered by element 2 everywhere in its
 /// left `covered_to` px; outside the box is element 0.
-fn world(covered_to: f64) -> impl Fn(PagePoint) -> Option<u32> {
+fn world(covered_to: f64) -> impl Fn(PagePoint) -> Option<NodeId> {
     move |p: PagePoint| {
         let inside = (10.0..=110.0).contains(&p.x) && (10.0..=50.0).contains(&p.y);
         match (inside, p.x < 10.0 + covered_to) {
-            (false, _) => Some(0),
-            (true, true) => Some(2),
-            (true, false) => Some(1),
+            (false, _) => Some(node(0)),
+            (true, true) => Some(node(2)),
+            (true, false) => Some(node(1)),
         }
     }
+}
+
+/// The element numbered `n` in these tables.
+fn node(n: u64) -> NodeId {
+    NodeId::from_u64(n)
 }
 
 const BOX: Bounds = Bounds {
@@ -72,8 +78,8 @@ const BOX: Bounds = Bounds {
 fn a_changed_hover_under_a_known_pointer_restores_the_old_element_or_clears() {
     type Case = (
         &'static str,
-        Option<u32>,
-        Option<u32>,
+        Option<u64>,
+        Option<u64>,
         f64,
         Option<Bounds>,
         HoverSync,
@@ -138,7 +144,10 @@ fn a_changed_hover_under_a_known_pointer_restores_the_old_element_or_clears() {
     ];
     for (name, before, after, covered_to, bounds, want) in cases {
         let got = decide(
-            Shift { before, after },
+            Shift {
+                before: before.map(node),
+                after: after.map(node),
+            },
             &known(),
             |_| bounds,
             world(covered_to),
@@ -151,8 +160,8 @@ fn a_changed_hover_under_a_known_pointer_restores_the_old_element_or_clears() {
 fn without_a_move_to_feed_again_nothing_is_touched() {
     let got = decide(
         Shift {
-            before: Some(1u32),
-            after: Some(2),
+            before: Some(node(1)),
+            after: Some(node(2)),
         },
         &LastMove::Unknown,
         |_| panic!("no bounds asked"),

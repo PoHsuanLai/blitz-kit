@@ -19,7 +19,7 @@ pub enum Repaired {
 /// leave/enter diff itself. Call at most once per resolve, with the hovered elements from
 /// before and after it. `doc` is any [`Document`] (a Dioxus document dispatches into its
 /// components; a bare `BaseDocument` into nothing).
-pub fn repair(doc: &mut dyn Document, last: &LastMove, shift: Shift<NodeId>) -> Repaired {
+pub fn repair(doc: &mut dyn Document, last: &LastMove, shift: Shift) -> Repaired {
     let sync = {
         let inner = doc.inner();
         decide(

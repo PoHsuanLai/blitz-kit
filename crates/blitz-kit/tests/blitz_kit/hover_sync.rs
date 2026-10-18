@@ -130,7 +130,7 @@ impl Surface {
 
     /// One resolve as `SurfaceDocument::resolve` runs it: the hover before, the layout, the
     /// hover after, the repair.
-    fn resolve(&mut self) -> (Repaired, Shift<NodeId>) {
+    fn resolve(&mut self) -> (Repaired, Shift) {
         let before = self.hovered();
         self.doc.inner_mut().resolve(0.0);
         let shift = Shift {

@@ -1,14 +1,16 @@
 //! Which repair a hover shift needs: the pure decision.
 
+use blitz_dom::NodeId;
+
 use super::LastMove;
 use crate::units::{Bounds, PagePoint};
 
 /// The hovered element before and after one resolve (an element: a hovered text node counts
 /// as its element, which is what carries the listeners).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Shift<N> {
-    pub before: Option<N>,
-    pub after: Option<N>,
+pub struct Shift {
+    pub before: Option<NodeId>,
+    pub after: Option<NodeId>,
 }
 
 /// What to do after a resolve, before the move is fed again.
@@ -48,11 +50,11 @@ pub fn probe_points(bounds: Bounds) -> [PagePoint; 5] {
 
 /// The repair for `shift`: `bounds` gives the old element's current box, `hit` the element at
 /// a point. Both are only asked when the hover really moved under a known pointer.
-pub fn decide<N: Copy + PartialEq>(
-    shift: Shift<N>,
+pub fn decide(
+    shift: Shift,
     last: &LastMove,
-    bounds: impl FnOnce(N) -> Option<Bounds>,
-    mut hit: impl FnMut(PagePoint) -> Option<N>,
+    bounds: impl FnOnce(NodeId) -> Option<Bounds>,
+    mut hit: impl FnMut(PagePoint) -> Option<NodeId>,
 ) -> HoverSync {
     if matches!(last, LastMove::Unknown) || shift.before == shift.after {
         return HoverSync::Unchanged;
