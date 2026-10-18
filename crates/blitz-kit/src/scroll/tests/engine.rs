@@ -91,7 +91,7 @@ fn item_4_touch_stops_the_glide_where_it_is() {
         sim.feed(ScrollIn::Frame);
         assert_eq!(sim.offset(), before);
     }
-    assert_eq!(engine::motion(&sim.engine), Motion::Still);
+    assert_eq!(sim.engine.motion(), Motion::Still);
 }
 
 /// At the top, a gesture begun inside at 50 px pulls `over` px past the edge.
@@ -273,7 +273,7 @@ fn item_14_the_engine_is_still_once_settled() {
     sim.stroke(2000.0, 100);
     sim.ended();
     sim.run(3.0);
-    assert_eq!(engine::motion(&sim.engine), Motion::Still);
+    assert_eq!(sim.engine.motion(), Motion::Still);
     let settled = sim.offset();
     for _ in 0..600 {
         sim.t += FRAME;

@@ -1,7 +1,7 @@
 //! The gesture phases: touch, begin, change and lift.
 
 use super::types::{Kinetic, NotifyPhase, Pending, Physics, Track};
-use super::{Engine, ScrollOut, latch_of, notify, set};
+use super::{Engine, ScrollOut, notify, set};
 use crate::scroll::animate;
 use crate::scroll::geom::{Dir, Geom};
 use crate::scroll::latch::Latched;
@@ -17,7 +17,7 @@ pub(super) fn may_begin(engine: Engine, now: Elapsed, physics: &Physics) -> Engi
             carry: animate::flight_velocity(&f, now, physics),
         }),
         other => Engine::Pending(Pending {
-            last: latch_of(&other),
+            last: other.latch(),
             carry: 0.0,
         }),
     }

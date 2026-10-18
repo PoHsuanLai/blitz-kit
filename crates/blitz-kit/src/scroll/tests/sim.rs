@@ -117,7 +117,7 @@ impl Sim {
     pub(super) fn run(&mut self, max_s: f64) -> Vec<(f64, f64)> {
         let start = self.t;
         let mut trace = Vec::new();
-        while engine::motion(&self.engine) == Motion::Animating && self.t - start < max_s {
+        while self.engine.motion() == Motion::Animating && self.t - start < max_s {
             self.t += FRAME;
             self.feed(ScrollIn::Frame);
             trace.push((self.t - start, self.offset()));

@@ -32,45 +32,53 @@ pub enum Engine {
     Spring(Spring),
 }
 
-/// The scroller whose geometry `step` needs for `input`: the one the input names, else the one
-/// the engine is on.
-pub fn target(engine: &Engine, input: &ScrollIn) -> Option<Latch> {
-    match input {
-        ScrollIn::Began { latched, .. } => Some(latched.latch),
-        ScrollIn::Step { latch, .. }
-        | ScrollIn::Jump { latch, .. }
-        | ScrollIn::Hold { latch, .. } => Some(*latch),
-        _ => latch_of(engine),
+impl Engine {
+    /// The scroller whose geometry `step` needs for `input`: the one the input names, else the one
+    /// the engine is on.
+    pub fn target(&self, input: &ScrollIn) -> Option<Latch> {
+        match input {
+            ScrollIn::Began { latched, .. } => Some(latched.latch),
+            ScrollIn::Step { latch, .. }
+            | ScrollIn::Jump { latch, .. }
+            | ScrollIn::Hold { latch, .. } => Some(*latch),
+            _ => self.latch(),
+        }
+    }
+
+    /// The scroller the engine is on.
+    pub fn latch(&self) -> Option<Latch> {
+        match self {
+            Engine::Idle => None,
+            Engine::Pending(p) => p.last,
+            Engine::Tracking(t) => Some(t.latch),
+            Engine::Momentum(f) => Some(f.latch),
+            Engine::Rebound(r) => Some(r.latch),
+            Engine::Smooth(s) => Some(s.latch),
+            Engine::Held(h) => Some(h.latch),
+            Engine::Spring(s) => Some(s.latch),
+        }
+    }
+
+    /// Whether the engine animates (and so needs a frame per callback).
+    pub fn motion(&self) -> Motion {
+        match self {
+            Engine::Idle | Engine::Pending(_) | Engine::Tracking(_) => Motion::Still,
+            Engine::Momentum(_)
+            | Engine::Rebound(_)
+            | Engine::Smooth(_)
+            | Engine::Held(_)
+            | Engine::Spring(_) => Motion::Animating,
+        }
     }
 }
 
-/// The scroller the engine is on.
+/// The scroller the engine is on. Kept for hosts that still import the free function; use
+/// [`Engine::latch`].
 pub fn latch_of(engine: &Engine) -> Option<Latch> {
-    match engine {
-        Engine::Idle => None,
-        Engine::Pending(p) => p.last,
-        Engine::Tracking(t) => Some(t.latch),
-        Engine::Momentum(f) => Some(f.latch),
-        Engine::Rebound(r) => Some(r.latch),
-        Engine::Smooth(s) => Some(s.latch),
-        Engine::Held(h) => Some(h.latch),
-        Engine::Spring(s) => Some(s.latch),
-    }
+    engine.latch()
 }
 
-/// Whether the engine animates (and so needs a frame per callback).
-pub fn motion(engine: &Engine) -> Motion {
-    match engine {
-        Engine::Idle | Engine::Pending(_) | Engine::Tracking(_) => Motion::Still,
-        Engine::Momentum(_)
-        | Engine::Rebound(_)
-        | Engine::Smooth(_)
-        | Engine::Held(_)
-        | Engine::Spring(_) => Motion::Animating,
-    }
-}
-
-/// Advance the engine by `input` at `now`. `geom` is [`target`]'s geometry, `None` when it is
+/// Advance the engine by `input` at `now`. `geom` is [`Engine::target`]'s geometry, `None` when it is
 /// gone (the node was removed): the engine then stops.
 pub fn step(
     engine: Engine,

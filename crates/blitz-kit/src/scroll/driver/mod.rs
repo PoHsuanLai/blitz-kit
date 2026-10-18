@@ -50,17 +50,17 @@ impl ScrollDriver {
 
     /// The scroller the engine is on.
     pub fn latch(&self) -> Option<Latch> {
-        engine::latch_of(&self.engine)
+        self.engine.latch()
     }
 
     /// Whether the engine needs a frame per callback.
     pub fn motion(&self) -> Motion {
-        engine::motion(&self.engine)
+        self.engine.motion()
     }
 
     /// Step the engine with `input` and write what it says.
     pub fn run(&mut self, doc: &mut BaseDocument, input: ScrollIn, env: Env<'_>) -> Moves {
-        let target = engine::target(&self.engine, &input);
+        let target = self.engine.target(&input);
         let geom = target.and_then(|latch| doc::geom(doc, latch.scroller, latch.axis));
         let current = std::mem::take(&mut self.engine);
         let (next, outs) = engine::step(current, input, env.now, geom, env.physics);
