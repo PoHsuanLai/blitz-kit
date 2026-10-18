@@ -2,7 +2,7 @@
 
 use std::fmt;
 use std::future::Future;
-use std::pin::pin;
+use std::pin::{Pin, pin};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU8, AtomicU32, Ordering};
 use std::task::{Context, Poll, Wake, Waker};
@@ -26,13 +26,10 @@ impl Wake for Unpark {
 /// Drive `future` to completion on this thread: wgpu's adapter and device futures resolve
 /// without an executor on the native backends, so parking until woken is all that is needed.
 pub fn block_on<T>(future: impl Future<Output = T>) -> T {
-    let waker = Waker::from(Arc::new(Unpark(thread::current())));
-    let mut cx = Context::from_waker(&waker);
     let mut future = pin!(future);
     loop {
-        match future.as_mut().poll(&mut cx) {
-            Poll::Ready(value) => return value,
-            Poll::Pending => thread::park(),
+        if let Some(value) = drive(future.as_mut(), None) {
+            return value;
         }
     }
 }
@@ -40,16 +37,22 @@ pub fn block_on<T>(future: impl Future<Output = T>) -> T {
 /// Like [`block_on`], but gives up when `deadline` has passed: `None` for a future that is still
 /// pending then. For the calls a hung driver can leave pending forever.
 pub fn block_on_timeout<T>(future: impl Future<Output = T>, deadline: Duration) -> Option<T> {
-    let end = Instant::now() + deadline;
+    drive(pin!(future), Some(Instant::now() + deadline))
+}
+
+/// Poll `future` and park between polls: until woken when `end` is `None`, until `end` otherwise
+/// (`None` result: `end` passed with the future still pending).
+fn drive<T>(mut future: Pin<&mut impl Future<Output = T>>, end: Option<Instant>) -> Option<T> {
     let waker = Waker::from(Arc::new(Unpark(thread::current())));
     let mut cx = Context::from_waker(&waker);
-    let mut future = pin!(future);
     loop {
         if let Poll::Ready(value) = future.as_mut().poll(&mut cx) {
             return Some(value);
         }
-        let left = end.checked_duration_since(Instant::now())?;
-        thread::park_timeout(left);
+        match end {
+            None => thread::park(),
+            Some(end) => thread::park_timeout(end.checked_duration_since(Instant::now())?),
+        }
     }
 }
 
