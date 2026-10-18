@@ -3,9 +3,7 @@
 
 use super::sim::{FRAME, PAGE, Sim};
 use crate::scroll::config::{ScrollRubberBand, ScrollScalar, ScrollSettings};
-use crate::scroll::engine::{
-    self, Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollIn,
-};
+use crate::scroll::engine::{Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollIn};
 use crate::scroll::geom::{Dir, Elastic, Px, ScrollAxis, Scroller};
 use crate::scroll::keys::LINE_PX;
 use crate::scroll::latch::{Candidate, latch};
