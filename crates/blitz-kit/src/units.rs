@@ -18,17 +18,38 @@ pub struct PagePoint {
     pub y: f64,
 }
 
+/// The smallest preferred scale [`Scale120::from_wire`] accepts, in 120ths: a quarter of a
+/// logical pixel per pixel.
+const MIN_WIRE_120THS: u32 = 30;
+
+/// The largest preferred scale [`Scale120::from_wire`] accepts, in 120ths: ten pixels per
+/// logical pixel.
+const MAX_WIRE_120THS: u32 = 1200;
+
 /// A fractional scale in 120ths (`180` is 1.5), the unit Wayland's `wp_fractional_scale` uses.
+/// The one type for it below the design system: shell-host's surface scale and the kit's pixel
+/// snap are this value, so a host passes it straight through.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Scale120(pub u32);
 
 impl Scale120 {
+    /// 1.0x, the scale a surface has until told otherwise.
+    pub const ONE: Scale120 = Scale120(120);
+
+    /// The scale of a `wp_fractional_scale_v1.preferred_scale` event's raw value, kept between a
+    /// quarter and ten times: a scale outside that is a compositor bug, and would size a buffer
+    /// beyond any device.
+    pub fn from_wire(value: u32) -> Scale120 {
+        Scale120(value.clamp(MIN_WIRE_120THS, MAX_WIRE_120THS))
+    }
+
     /// The nearest 120th to a device-pixels-per-logical-pixel `factor` (`1.5` is `180`).
     pub fn from_factor(factor: f64) -> Scale120 {
         Scale120((factor * 120.0).round().max(0.0) as u32)
     }
 
-    /// Device pixels per logical pixel.
+    /// Device pixels per logical pixel, for the one place arithmetic needs a float (sizing a
+    /// buffer). Never stored.
     pub fn factor(self) -> f64 {
         f64::from(self.0) / 120.0
     }

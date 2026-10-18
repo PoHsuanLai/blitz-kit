@@ -7,3 +7,8 @@ use std::time::Duration;
 /// A point on the caller's timeline, as the time since its origin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Elapsed(pub Duration);
+
+impl Elapsed {
+    /// The origin itself.
+    pub const ZERO: Elapsed = Elapsed(Duration::ZERO);
+}
