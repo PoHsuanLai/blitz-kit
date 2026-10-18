@@ -72,12 +72,6 @@ impl Engine {
     }
 }
 
-/// The scroller the engine is on. Kept for hosts that still import the free function; use
-/// [`Engine::latch`].
-pub fn latch_of(engine: &Engine) -> Option<Latch> {
-    engine.latch()
-}
-
 /// Advance the engine by `input` at `now`. `geom` is [`Engine::target`]'s geometry, `None` when it is
 /// gone (the node was removed): the engine then stops.
 pub fn step(
