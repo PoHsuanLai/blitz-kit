@@ -31,11 +31,20 @@ fn overscroll(node: &Node) -> Overscroll {
     }
 }
 
-/// An elastic axis (design/11 §11.3.7): opted in, and vertical or with content to scroll.
-fn elastic(opted: Overscroll, axis: ScrollAxis, max: f64) -> Elastic {
-    match (opted, axis) {
-        (Overscroll::Band, ScrollAxis::Y) => Elastic::Elastic,
-        (Overscroll::Band, ScrollAxis::X) if max > 0.0 => Elastic::Elastic,
+/// Which kind of scroller an axis belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Kind {
+    Viewport,
+    Node,
+}
+
+/// An elastic axis (design/11 §11.3.7): opted in, and with content to scroll, or the document
+/// viewport's vertical. A container whose content fits never stretches: its content would move
+/// with nothing to scroll to.
+fn elastic(opted: Overscroll, kind: Kind, axis: ScrollAxis, max: f64) -> Elastic {
+    match (opted, kind, axis) {
+        (Overscroll::Band, Kind::Viewport, ScrollAxis::Y) => Elastic::Elastic,
+        (Overscroll::Band, _, _) if max > 0.0 => Elastic::Elastic,
         _ => Elastic::Rigid,
     }
 }
@@ -69,7 +78,7 @@ pub fn geom(doc: &BaseDocument, scroller: Scroller, axis: ScrollAxis) -> Option<
                 offset: Px(pick(scroll.x, scroll.y)),
                 max: Px(max),
                 viewport: Px(pick(f64::from(vw), f64::from(vh))),
-                elastic: elastic(opted, axis, max),
+                elastic: elastic(opted, Kind::Viewport, axis, max),
             })
         }
         Scroller::Node(id) => {
@@ -91,7 +100,7 @@ pub fn geom(doc: &BaseDocument, scroller: Scroller, axis: ScrollAxis) -> Option<
                     f64::from(layout.size.width),
                     f64::from(layout.size.height),
                 )),
-                elastic: elastic(overscroll(node), axis, max),
+                elastic: elastic(overscroll(node), Kind::Node, axis, max),
             })
         }
     }
@@ -119,5 +128,29 @@ pub fn write(doc: &mut BaseDocument, scroller: Scroller, axis: ScrollAxis, raw: 
                 set(node.scroll_offset_mut());
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_container_stretches_only_with_content_to_scroll_and_the_viewport_vertically_always() {
+        use ScrollAxis::{X, Y};
+        let band = Overscroll::Band;
+        assert_eq!(
+            elastic(band, Kind::Node, Y, 0.0),
+            Elastic::Rigid,
+            "content fits"
+        );
+        assert_eq!(elastic(band, Kind::Node, Y, 40.0), Elastic::Elastic);
+        assert_eq!(elastic(band, Kind::Node, X, 40.0), Elastic::Elastic);
+        assert_eq!(elastic(band, Kind::Viewport, Y, 0.0), Elastic::Elastic);
+        assert_eq!(elastic(band, Kind::Viewport, X, 0.0), Elastic::Rigid);
+        assert_eq!(
+            elastic(Overscroll::Clamp, Kind::Node, Y, 40.0),
+            Elastic::Rigid
+        );
     }
 }
