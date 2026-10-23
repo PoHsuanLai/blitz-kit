@@ -1,9 +1,11 @@
 //! Choosing the adapter: the facts about each wgpu adapter, the preference a shell configures,
-//! and the order to try the candidates in. Validating a candidate by a first present needs a
+//! the order to try the candidates in, and the one lock every opener in a process takes
+//! ([`opening`]). Validating a candidate by a first present needs a
 //! Wayland surface, so that half stays with the host.
 
 mod device;
 mod facts;
+mod opening;
 mod pref;
 mod rank;
 
@@ -15,5 +17,6 @@ pub use device::{
     ranked, request_device, request_watched_device,
 };
 pub use facts::{AdapterFacts, DeviceKind, GpuBackend};
+pub use opening::opening;
 pub use pref::{AdapterPref, PciDevice, PciVendor};
 pub use rank::rank;

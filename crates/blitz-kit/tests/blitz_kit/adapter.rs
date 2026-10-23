@@ -137,3 +137,25 @@ fn the_label_is_name_backend_driver() {
         "NVIDIA GeForce RTX 5070 Ti (Vulkan, NVIDIA 615.71)"
     );
 }
+
+#[test]
+fn only_one_opener_holds_the_opening_lock_at_a_time() {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    use std::thread;
+    use std::time::Duration;
+
+    static INSIDE: AtomicU32 = AtomicU32::new(0);
+    let openers: Vec<_> = (0..4)
+        .map(|_| {
+            thread::spawn(|| {
+                let _opening = blitz_kit::adapter::opening();
+                assert_eq!(INSIDE.fetch_add(1, Ordering::SeqCst), 0);
+                thread::sleep(Duration::from_millis(5));
+                INSIDE.fetch_sub(1, Ordering::SeqCst);
+            })
+        })
+        .collect();
+    for opener in openers {
+        opener.join().unwrap();
+    }
+}
