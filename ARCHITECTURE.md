@@ -9,11 +9,15 @@ every repo shares; where the two disagree, this file wins for this repo.
 
 ## 1. Crate map
 
-One crate, `blitz-kit` (`crates/blitz-kit`). Allowed dependencies: `blitz-dom`, `blitz-traits`,
+One crate, `blitz-kit` (`crates/blitz-kit`). Allowed dependencies, behind the default feature
+`blitz` (every module that works on a Blitz document): `blitz-dom`, `blitz-traits`,
 `parley`, `keyboard-types` (`scroll::keys` names the keys a scroll answers to), `tokio` (`net` reads
 files on the caller's blocking pool), and, behind feature `adapter`, `wgpu` and `serde`
 (`AdapterPref` is a shell's serialized setting), behind feature `settings`, `serde` (the scroll
-settings read as a settings file's `[scroll]` table).
+settings read as a settings file's `[scroll]` table). Without `blitz` the crate is `data_url`,
+`element_id`, `units` and the `adapter` feature: a layer below Blitz (a media host) takes
+`default-features = false, features = ["adapter"]` for the ranking and `adapter::opening` with only
+std, `wgpu` and `serde`.
 `scripts/check-boundary.sh` forbids every `ds*`, `dioxus*`, `wayland*` and `smithay*`
 crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 

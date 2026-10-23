@@ -11,7 +11,11 @@
 //! - [`fonts`]: one shared font context for every document.
 //! - [`net`] and [`data_url`]: a local-only network provider and `data:` URL decoding.
 //! - [`element_id`] and [`units`]: the small typed vocabulary the rest shares.
-//! - `adapter` (feature `adapter`): ranking GPU adapters.
+//! - `adapter` (feature `adapter`): ranking GPU adapters, and the one lock every wgpu opener in a
+//!   process holds.
+//!
+//! Every module but `data_url`, `element_id`, `units` and `adapter` needs the default feature
+//! `blitz`.
 //!
 //! ```
 //! use blitz_kit::data_url::decode;
@@ -24,11 +28,18 @@
 pub mod adapter;
 pub mod data_url;
 pub mod element_id;
+#[cfg(feature = "blitz")]
 pub mod fonts;
+#[cfg(feature = "blitz")]
 pub mod hit;
+#[cfg(feature = "blitz")]
 pub mod hover;
+#[cfg(feature = "blitz")]
 pub mod net;
+#[cfg(feature = "blitz")]
 pub mod paint_rect;
+#[cfg(feature = "blitz")]
 pub mod scroll;
+#[cfg(feature = "blitz")]
 pub mod snap;
 pub mod units;

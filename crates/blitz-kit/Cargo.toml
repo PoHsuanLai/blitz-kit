@@ -9,22 +9,34 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
-blitz-dom = { workspace = true }
-blitz-traits = { workspace = true }
-parley = { workspace = true }
+# Feature `blitz` (default): the modules that work on a Blitz document.
+blitz-dom = { workspace = true, optional = true }
+blitz-traits = { workspace = true, optional = true }
+parley = { workspace = true, optional = true }
 # `scroll::keys` names the keys a scroll responds to.
-keyboard-types = { workspace = true }
+keyboard-types = { workspace = true, optional = true }
 # `net::LocalNet` reads files on the caller's blocking pool.
-tokio = { workspace = true }
+tokio = { workspace = true, optional = true }
 # Feature `adapter`: the ranking of GPU adapters, and `AdapterPref` (a shell's serialized setting).
 wgpu = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["blitz"]
+# Everything that works on a Blitz document: scroll, hover, hit, paint_rect, snap, fonts, net.
+# Without it the crate is `data_url`, `element_id`, `units` and, with `adapter`, the adapter
+# ranking and the process-wide `adapter::opening` lock: a layer below Blitz takes
+# `default-features = false, features = ["adapter"]` and gets std, wgpu and serde only.
+blitz = ["dep:blitz-dom", "dep:blitz-traits", "dep:parley", "dep:keyboard-types", "dep:tokio"]
 adapter = ["dep:wgpu", "dep:serde"]
 # `scroll::config`'s settings read and write as a settings file's `[scroll]` table.
-settings = ["dep:serde"]
+settings = ["blitz", "dep:serde"]
+
+# The integration tests drive Blitz documents.
+[[test]]
+name = "blitz_kit"
+path = "tests/blitz_kit/main.rs"
+required-features = ["blitz"]
 
 [lints]
 workspace = true
