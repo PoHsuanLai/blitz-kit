@@ -25,14 +25,17 @@ blitz-kit = { path = "crates/blitz-kit" }
 # Blitz comes from our fork (github.com/PoHsuanLai/blitz, branch quire-pin): upstream e99fbdbd plus
 # bf588142 (restyles elements whose animation was cancelled mid-way) and 1b23fbd9 (attributes carry no
 # namespace, so `[data-x=y]` matches) and 0be21979 (a pointer press whose default action is
-# cancelled resets the drag state, so a pop-up menu's items pick on macOS). Move back
+# cancelled resets the drag state, so a pop-up menu's items pick on macOS) and 41134ff3 (a text
+# input takes the element's font; Return adds one line to a textarea; an arrow press moves the
+# caret once on macOS; a table cell is at least its content's width and its row grows to hold it).
+# Move back
 # to DioxusLabs/blitz when a toolchain-bump wave finds the fix (or its equivalent) upstream.
-blitz-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "0be21979f445965db402ddb79766a549b7b848a9", default-features = false, features = ["svg", "system-fonts", "custom-widget", "accessibility"] }
-blitz-paint = { git = "https://github.com/PoHsuanLai/blitz", rev = "0be21979f445965db402ddb79766a549b7b848a9", features = ["custom-widget"] }
-blitz-traits = { git = "https://github.com/PoHsuanLai/blitz", rev = "0be21979f445965db402ddb79766a549b7b848a9" }
-dioxus-native-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "0be21979f445965db402ddb79766a549b7b848a9", default-features = false, features = ["svg", "system-fonts", "accessibility"] }
+blitz-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "41134ff385ef138ed573ee5685308056243de0cf", default-features = false, features = ["svg", "system-fonts", "custom-widget", "accessibility"] }
+blitz-paint = { git = "https://github.com/PoHsuanLai/blitz", rev = "41134ff385ef138ed573ee5685308056243de0cf", features = ["custom-widget"] }
+blitz-traits = { git = "https://github.com/PoHsuanLai/blitz", rev = "41134ff385ef138ed573ee5685308056243de0cf" }
+dioxus-native-dom = { git = "https://github.com/PoHsuanLai/blitz", rev = "41134ff385ef138ed573ee5685308056243de0cf", default-features = false, features = ["svg", "system-fonts", "accessibility"] }
 # The portable window path for apps (winit); the shell uses shell-host instead.
-dioxus-native = { git = "https://github.com/PoHsuanLai/blitz", rev = "0be21979f445965db402ddb79766a549b7b848a9", default-features = false, features = ["vello-hybrid", "svg", "system-fonts", "accessibility"] }
+dioxus-native = { git = "https://github.com/PoHsuanLai/blitz", rev = "41134ff385ef138ed573ee5685308056243de0cf", default-features = false, features = ["vello-hybrid", "svg", "system-fonts", "accessibility"] }
 
 # Dioxus 0.7.x (renderer-free core; mailo is on 0.7.10).
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
