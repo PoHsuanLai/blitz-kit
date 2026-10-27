@@ -17,7 +17,6 @@ const END_AFTER_S: f64 = 0.024;
 pub struct Band {
     model: ScrollRubberBand,
     c: f64,
-    divisor: f64,
     /// Overscroll that does not stretch when the gesture began at the edge.
     edge_min: f64,
 }
@@ -49,7 +48,6 @@ impl Band {
         Band {
             model: settings.rubber_band,
             c: settings.rubber_band_c.get(),
-            divisor: settings.rubber_band_linear_divisor.get(),
             edge_min: settings.rubber_band_edge_min_px.get(),
         }
     }
@@ -71,7 +69,6 @@ impl Band {
         match self.model {
             ScrollRubberBand::Bounded if d > 0.0 => (1.0 - 1.0 / (over * self.c / d + 1.0)) * d,
             ScrollRubberBand::Bounded | ScrollRubberBand::Off => 0.0,
-            ScrollRubberBand::Linear => over / self.divisor,
         }
     }
 
@@ -84,7 +81,6 @@ impl Band {
         let over = match self.model {
             ScrollRubberBand::Bounded if s < d => s * d / (self.c * (d - s)),
             ScrollRubberBand::Bounded => f64::MAX / 4.0,
-            ScrollRubberBand::Linear => s * self.divisor,
             ScrollRubberBand::Off => 0.0,
         };
         match began {
@@ -123,22 +119,17 @@ impl SnapBack {
 mod tests {
     use super::*;
 
-    fn band(model: ScrollRubberBand) -> Band {
-        Band::from_settings(&ScrollSettings {
-            rubber_band: model,
-            ..ScrollSettings::default()
-        })
+    fn band() -> Band {
+        Band::from_settings(&ScrollSettings::default())
     }
 
     #[test]
     fn overscroll_inverts_stretch() {
-        for model in [ScrollRubberBand::Bounded, ScrollRubberBand::Linear] {
-            for began in [AtEdge::Inside, AtEdge::AtEdge] {
-                let b = band(model);
-                let s = b.stretch(420.0, 1000.0, began);
-                let over = b.overscroll(s, 1000.0, began);
-                assert!((over - 420.0).abs() < 1e-6, "{model:?} {began:?}: {over}");
-            }
+        for began in [AtEdge::Inside, AtEdge::AtEdge] {
+            let b = band();
+            let s = b.stretch(420.0, 1000.0, began);
+            let over = b.overscroll(s, 1000.0, began);
+            assert!((over - 420.0).abs() < 1e-6, "{began:?}: {over}");
         }
     }
 

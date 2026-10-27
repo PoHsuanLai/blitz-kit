@@ -85,18 +85,6 @@ pub enum ScrollMomentum {
     Off,
 }
 
-/// `scroll.momentum_model`: the deceleration curve of a glide.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "settings", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "settings", serde(rename_all = "snake_case"))]
-pub enum ScrollMomentumModel {
-    /// `v' = -a v^b` (design/11 §11.5.1).
-    #[default]
-    MacMouseFix,
-    /// `v(t) = v0 r^t_ms`, `r = 0.998`: the longer glide (design/11 R5).
-    Ios,
-}
-
 /// `scroll.rubber_band`: how far content stretches past an edge under the fingers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "settings", derive(Serialize, Deserialize))]
@@ -105,8 +93,6 @@ pub enum ScrollRubberBand {
     /// `s = (1 - 1/(O c/d + 1)) d`.
     #[default]
     Bounded,
-    /// `s = O / divisor`.
-    Linear,
     /// No stretch: every edge clamps.
     Off,
 }
@@ -129,7 +115,6 @@ pub enum ScrollbarVisibility {
 pub struct ScrollSettings {
     pub natural: NaturalScroll,
     pub momentum: ScrollMomentum,
-    pub momentum_model: ScrollMomentumModel,
     pub momentum_a: ScrollScalar,
     pub momentum_b: ScrollScalar,
     pub momentum_stop_px_s: ScrollScalar,
@@ -139,7 +124,6 @@ pub struct ScrollSettings {
     pub velocity_held_still_ms: ScrollMs,
     pub rubber_band: ScrollRubberBand,
     pub rubber_band_c: ScrollFraction,
-    pub rubber_band_linear_divisor: ScrollScalar,
     pub rubber_band_edge_min_px: ScrollPx,
     pub rubber_band_snap_rate: ScrollScalar,
     pub rubber_band_snap_gain: ScrollScalar,
@@ -159,7 +143,6 @@ impl Default for ScrollSettings {
         ScrollSettings {
             natural: NaturalScroll::Natural,
             momentum: ScrollMomentum::On,
-            momentum_model: ScrollMomentumModel::MacMouseFix,
             momentum_a: ScrollScalar(30.0),
             momentum_b: ScrollScalar(0.7),
             momentum_stop_px_s: ScrollScalar(1.0),
@@ -169,7 +152,6 @@ impl Default for ScrollSettings {
             velocity_held_still_ms: ScrollMs(50),
             rubber_band: ScrollRubberBand::Bounded,
             rubber_band_c: ScrollFraction(550),
-            rubber_band_linear_divisor: ScrollScalar(20.0),
             rubber_band_edge_min_px: ScrollPx(10),
             rubber_band_snap_rate: ScrollScalar(12.5),
             rubber_band_snap_gain: ScrollScalar(0.31),
@@ -200,7 +182,6 @@ mod tests {
             ("window", s.velocity_window_ms.secs(), 0.08),
             ("held still", s.velocity_held_still_ms.secs(), 0.05),
             ("c", s.rubber_band_c.get(), 0.55),
-            ("divisor", s.rubber_band_linear_divisor.get(), 20.0),
             ("edge min", s.rubber_band_edge_min_px.get(), 10.0),
             ("snap rate", s.rubber_band_snap_rate.get(), 12.5),
             ("snap gain", s.rubber_band_snap_gain.get(), 0.31),

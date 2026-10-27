@@ -137,11 +137,6 @@ fn the_glides_speed_decays_along_the_drag_curve() {
 #[test]
 fn the_bands_stretch_follows_the_bounded_curve() {
     let bounded = Physics::from_settings(&ScrollSettings::default()).band;
-    let linear = Physics::from_settings(&ScrollSettings {
-        rubber_band: ScrollRubberBand::Linear,
-        ..ScrollSettings::default()
-    })
-    .band;
     let off = Physics::from_settings(&ScrollSettings {
         rubber_band: ScrollRubberBand::Off,
         ..ScrollSettings::default()
@@ -170,15 +165,6 @@ fn the_bands_stretch_follows_the_bounded_curve() {
             AtEdge::AtEdge,
             0.0,
         ),
-        (
-            "linear, 1000 px",
-            linear,
-            1000.0,
-            1000.0,
-            AtEdge::Inside,
-            50.0,
-        ),
-        ("linear, 100 px", linear, 100.0, 1000.0, AtEdge::Inside, 5.0),
         ("off", off, 1000.0, 1000.0, AtEdge::Inside, 0.0),
     ];
     for (name, band, over, view, began, want) in cases {

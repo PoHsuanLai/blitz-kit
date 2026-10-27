@@ -109,8 +109,6 @@ fn item_5_the_stretch_under_the_fingers() {
     let cases = [
         ("bounded 100", 100.0, ScrollRubberBand::Bounded, 52.1),
         ("bounded 1000", 1000.0, ScrollRubberBand::Bounded, 354.8),
-        ("linear 100", 100.0, ScrollRubberBand::Linear, 5.0),
-        ("linear 1000", 1000.0, ScrollRubberBand::Linear, 50.0),
     ];
     for (name, over, model, want) in cases {
         let s = stretch(over, model);
