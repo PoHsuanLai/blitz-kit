@@ -25,15 +25,15 @@ fn since(t0: Elapsed, now: Elapsed) -> f64 {
 }
 
 /// Whether a gesture on `g` may stretch past the edges.
-pub fn stretches(track: &Track, g: &Geom, physics: &Physics) -> bool {
-    track.kinetic == Kinetic::Momentum && g.elastic == Elastic::Elastic && physics.band.enabled()
+pub fn stretches(track: &Track, g: &Geom) -> bool {
+    track.kinetic == Kinetic::Momentum && g.elastic == Elastic::Elastic
 }
 
 /// The raw offset a tracking gesture shows: its position, or the edge plus the stretch.
 pub fn raw_for(track: &Track, g: &Geom, physics: &Physics) -> f64 {
     let max = g.edge(Dir::Pos);
     let d = g.viewport.0;
-    if !stretches(track, g, physics) {
+    if !stretches(track, g) {
         return g.clamp(track.pos);
     }
     if track.pos < 0.0 {
@@ -190,7 +190,7 @@ fn glide(f: Flight, now: Elapsed, g: &Geom, physics: &Physics) -> (Engine, Vec<S
     let dir = if f.v0 > 0.0 { Dir::Pos } else { Dir::Neg };
     let room = (g.edge(dir) - f.x0) * dir.sign();
     let travel = physics.glide.travel(speed, t);
-    let elastic = g.elastic == Elastic::Elastic && physics.band.enabled();
+    let elastic = g.elastic == Elastic::Elastic;
     if travel >= room {
         let ended = || {
             (

@@ -85,18 +85,6 @@ pub enum ScrollMomentum {
     Off,
 }
 
-/// `scroll.rubber_band`: how far content stretches past an edge under the fingers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "settings", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "settings", serde(rename_all = "snake_case"))]
-pub enum ScrollRubberBand {
-    /// `s = (1 - 1/(O c/d + 1)) d`.
-    #[default]
-    Bounded,
-    /// No stretch: every edge clamps.
-    Off,
-}
-
 /// `scroll.scrollbars`: when the overlay thumb shows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "settings", derive(Serialize, Deserialize))]
@@ -122,7 +110,6 @@ pub struct ScrollSettings {
     pub momentum_cap_px_s: ScrollScalar,
     pub velocity_window_ms: ScrollMs,
     pub velocity_held_still_ms: ScrollMs,
-    pub rubber_band: ScrollRubberBand,
     pub rubber_band_c: ScrollFraction,
     pub rubber_band_edge_min_px: ScrollPx,
     pub rubber_band_snap_rate: ScrollScalar,
@@ -150,7 +137,6 @@ impl Default for ScrollSettings {
             momentum_cap_px_s: ScrollScalar(12_000.0),
             velocity_window_ms: ScrollMs(80),
             velocity_held_still_ms: ScrollMs(50),
-            rubber_band: ScrollRubberBand::Bounded,
             rubber_band_c: ScrollFraction(550),
             rubber_band_edge_min_px: ScrollPx(10),
             rubber_band_snap_rate: ScrollScalar(12.5),
@@ -196,7 +182,6 @@ mod tests {
             assert!((got - want).abs() < 1e-6, "{name}: {got} != {want}");
         }
         assert_eq!(s.natural, NaturalScroll::Natural);
-        assert_eq!(s.rubber_band, ScrollRubberBand::Bounded);
         assert_eq!(s.scrollbars, ScrollbarVisibility::WhenScrolling);
     }
 }

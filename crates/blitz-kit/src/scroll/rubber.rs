@@ -5,17 +5,16 @@
 //! the scroller's viewport extent on the axis. Stretches are magnitudes (>= 0), measured
 //! outward from the edge.
 
-use crate::scroll::config::{ScrollRubberBand, ScrollSettings};
+use crate::scroll::config::ScrollSettings;
 
 /// A rebound ends once `|s|` is below this and ...
 const END_STRETCH: f64 = 1.0;
 /// ... at least this long has passed (design/11 §11.5.3, R11).
 const END_AFTER_S: f64 = 0.024;
 
-/// The stretch model and its constants.
+/// The stretch, `s = (1 - 1/(O c/d + 1)) d`, and its constants.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Band {
-    model: ScrollRubberBand,
     c: f64,
     /// Overscroll that does not stretch when the gesture began at the edge.
     edge_min: f64,
@@ -43,18 +42,12 @@ pub enum Settled {
 }
 
 impl Band {
-    /// The model `settings` choose.
+    /// The constants `settings` choose.
     pub fn from_settings(settings: &ScrollSettings) -> Band {
         Band {
-            model: settings.rubber_band,
             c: settings.rubber_band_c.get(),
             edge_min: settings.rubber_band_edge_min_px.get(),
         }
-    }
-
-    /// Whether any stretch is allowed at all (`scroll.rubber_band != Off`).
-    pub fn enabled(&self) -> bool {
-        self.model != ScrollRubberBand::Off
     }
 
     /// The stretch for overscroll `over` on a viewport of `d` px.
@@ -66,9 +59,10 @@ impl Band {
         if over <= 0.0 {
             return 0.0;
         }
-        match self.model {
-            ScrollRubberBand::Bounded if d > 0.0 => (1.0 - 1.0 / (over * self.c / d + 1.0)) * d,
-            ScrollRubberBand::Bounded | ScrollRubberBand::Off => 0.0,
+        if d > 0.0 {
+            (1.0 - 1.0 / (over * self.c / d + 1.0)) * d
+        } else {
+            0.0
         }
     }
 
@@ -78,10 +72,10 @@ impl Band {
         if s <= 0.0 {
             return 0.0;
         }
-        let over = match self.model {
-            ScrollRubberBand::Bounded if s < d => s * d / (self.c * (d - s)),
-            ScrollRubberBand::Bounded => f64::MAX / 4.0,
-            ScrollRubberBand::Off => 0.0,
+        let over = if s < d {
+            s * d / (self.c * (d - s))
+        } else {
+            f64::MAX / 4.0
         };
         match began {
             AtEdge::AtEdge => over + self.edge_min,

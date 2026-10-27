@@ -2,7 +2,7 @@
 //! `scroll::engine::step` (the simulated scroller is `sim`).
 
 use super::sim::{FRAME, PAGE, Sim};
-use crate::scroll::config::{ScrollRubberBand, ScrollScalar, ScrollSettings};
+use crate::scroll::config::{ScrollScalar, ScrollSettings};
 use crate::scroll::engine::{Engine, Flight, Kinetic, Motion, NotifyPhase, Physics, ScrollIn};
 use crate::scroll::geom::{Dir, Elastic, Px, ScrollAxis, Scroller};
 use crate::scroll::keys::LINE_PX;
@@ -93,12 +93,8 @@ fn item_4_touch_stops_the_glide_where_it_is() {
 }
 
 /// At the top, a gesture begun inside at 50 px pulls `over` px past the edge.
-fn stretch(over: f64, model: ScrollRubberBand) -> f64 {
-    let scroll = ScrollSettings {
-        rubber_band: model,
-        ..ScrollSettings::default()
-    };
-    let mut sim = Sim::with(50.0, 5000.0, Elastic::Elastic, scroll);
+fn stretch(over: f64) -> f64 {
+    let mut sim = Sim::with(50.0, 5000.0, Elastic::Elastic, ScrollSettings::default());
     sim.began(Dir::Neg, AtEdge::Inside);
     sim.pull(-50.0 - over);
     -sim.offset()
@@ -107,11 +103,11 @@ fn stretch(over: f64, model: ScrollRubberBand) -> f64 {
 #[test]
 fn item_5_the_stretch_under_the_fingers() {
     let cases = [
-        ("bounded 100", 100.0, ScrollRubberBand::Bounded, 52.1),
-        ("bounded 1000", 1000.0, ScrollRubberBand::Bounded, 354.8),
+        ("bounded 100", 100.0, 52.1),
+        ("bounded 1000", 1000.0, 354.8),
     ];
-    for (name, over, model, want) in cases {
-        let s = stretch(over, model);
+    for (name, over, want) in cases {
+        let s = stretch(over);
         assert!((s - want).abs() <= 1.0, "{name}: {s}");
     }
     // Began at the edge: the first 10 px do not stretch.

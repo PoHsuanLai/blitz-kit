@@ -66,7 +66,7 @@ pub(super) fn changed(
     let Engine::Tracking(mut track) = engine else {
         return (engine, Vec::new());
     };
-    track.pos = match animate::stretches(&track, g, physics) {
+    track.pos = match animate::stretches(&track, g) {
         true => track.pos + delta,
         false => g.clamp(track.pos + delta),
     };
