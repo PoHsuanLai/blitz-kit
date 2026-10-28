@@ -4,6 +4,7 @@
 //!
 //! # Modules
 //!
+//! - [`after_resolve`]: readings a host takes from its document after every resolve.
 //! - [`scroll`]: the scroll engine (physics, keys, rubber band, a driver per document).
 //! - [`hover`]: repairs Blitz's hover when an element arrives under a resting pointer.
 //! - [`hit`] and [`paint_rect`]: what a point hits, and an element's painted rectangle.
@@ -26,6 +27,8 @@
 
 #[cfg(feature = "adapter")]
 pub mod adapter;
+#[cfg(feature = "blitz")]
+pub mod after_resolve;
 pub mod data_url;
 pub mod element_id;
 #[cfg(feature = "blitz")]

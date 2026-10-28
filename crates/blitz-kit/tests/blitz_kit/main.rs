@@ -3,6 +3,7 @@
 
 #[cfg(feature = "adapter")]
 mod adapter;
+mod after_resolve;
 mod fonts;
 mod hit;
 mod hover_sync;

@@ -75,3 +75,9 @@ pub fn by_id(doc: &BaseDocument, id: &str) -> NodeId {
     doc.get_element_by_id(id)
         .unwrap_or_else(|| panic!("no #{id} in the page"))
 }
+
+/// Replace `node`'s inline `style`.
+pub fn set_style(doc: &mut BaseDocument, node: NodeId, style: &str) {
+    let mut mutr = doc.mutate();
+    mutr.set_attribute(node, name("style"), style);
+}
