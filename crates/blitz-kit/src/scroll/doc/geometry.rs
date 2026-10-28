@@ -6,45 +6,19 @@ use super::element::{attr, body, scrolls};
 use super::frame::{in_frame, in_frame_mut};
 use crate::scroll::geom::{Elastic, Geom, Px, ScrollAxis, Scroller};
 
-/// What a node's `data-overscroll` asks for at the end of its range.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Overscroll {
-    Band,
-    Clamp,
-}
-
-impl Overscroll {
-    /// This request, or `other` when this one asks for nothing.
-    fn or(self, other: Overscroll) -> Overscroll {
-        match self {
-            Overscroll::Band => Overscroll::Band,
-            Overscroll::Clamp => other,
-        }
-    }
-}
-
-/// What `node` opted into (`data-overscroll="band"` is the rubber band).
-fn overscroll(node: &Node) -> Overscroll {
-    match attr(node, "data-overscroll") {
-        Some("band") => Overscroll::Band,
-        _ => Overscroll::Clamp,
-    }
-}
-
-/// Which kind of scroller an axis belongs to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Kind {
-    Viewport,
-    Node,
+/// Whether `node` opted into the rubber band at the end of its range
+/// (`data-overscroll="band"`); otherwise it clamps.
+fn bands(node: &Node) -> bool {
+    attr(node, "data-overscroll") == Some("band")
 }
 
 /// An elastic axis (design/11 §11.3.7): opted in, and with content to scroll, or the document
 /// viewport's vertical. A container whose content fits never stretches: its content would move
 /// with nothing to scroll to.
-fn elastic(opted: Overscroll, kind: Kind, axis: ScrollAxis, max: f64) -> Elastic {
-    match (opted, kind, axis) {
-        (Overscroll::Band, Kind::Viewport, ScrollAxis::Y) => Elastic::Elastic,
-        (Overscroll::Band, _, _) if max > 0.0 => Elastic::Elastic,
+fn elastic(banded: bool, viewport: bool, axis: ScrollAxis, max: f64) -> Elastic {
+    match (banded, viewport, axis) {
+        (true, true, ScrollAxis::Y) => Elastic::Elastic,
+        (true, _, _) if max > 0.0 => Elastic::Elastic,
         _ => Elastic::Rigid,
     }
 }
@@ -72,13 +46,12 @@ pub fn geom(doc: &BaseDocument, scroller: Scroller, axis: ScrollAxis) -> Option<
             );
             let max = pick(content_w - f64::from(vw), content_h - f64::from(vh)).max(0.0);
             let scroll = doc.viewport_scroll();
-            let opted = body(doc).map_or(Overscroll::Clamp, overscroll);
-            let opted = overscroll(root).or(opted);
+            let opted = bands(root) || body(doc).is_some_and(bands);
             Some(Geom {
                 offset: Px(pick(scroll.x, scroll.y)),
                 max: Px(max),
                 viewport: Px(pick(f64::from(vw), f64::from(vh))),
-                elastic: elastic(opted, Kind::Viewport, axis, max),
+                elastic: elastic(opted, true, axis, max),
             })
         }
         Scroller::Node(id) => {
@@ -100,7 +73,7 @@ pub fn geom(doc: &BaseDocument, scroller: Scroller, axis: ScrollAxis) -> Option<
                     f64::from(layout.size.width),
                     f64::from(layout.size.height),
                 )),
-                elastic: elastic(overscroll(node), Kind::Node, axis, max),
+                elastic: elastic(bands(node), false, axis, max),
             })
         }
     }
@@ -138,19 +111,12 @@ mod tests {
     #[test]
     fn a_container_stretches_only_with_content_to_scroll_and_the_viewport_vertically_always() {
         use ScrollAxis::{X, Y};
-        let band = Overscroll::Band;
-        assert_eq!(
-            elastic(band, Kind::Node, Y, 0.0),
-            Elastic::Rigid,
-            "content fits"
-        );
-        assert_eq!(elastic(band, Kind::Node, Y, 40.0), Elastic::Elastic);
-        assert_eq!(elastic(band, Kind::Node, X, 40.0), Elastic::Elastic);
-        assert_eq!(elastic(band, Kind::Viewport, Y, 0.0), Elastic::Elastic);
-        assert_eq!(elastic(band, Kind::Viewport, X, 0.0), Elastic::Rigid);
-        assert_eq!(
-            elastic(Overscroll::Clamp, Kind::Node, Y, 40.0),
-            Elastic::Rigid
-        );
+        let (band, node, viewport) = (true, false, true);
+        assert_eq!(elastic(band, node, Y, 0.0), Elastic::Rigid, "content fits");
+        assert_eq!(elastic(band, node, Y, 40.0), Elastic::Elastic);
+        assert_eq!(elastic(band, node, X, 40.0), Elastic::Elastic);
+        assert_eq!(elastic(band, viewport, Y, 0.0), Elastic::Elastic);
+        assert_eq!(elastic(band, viewport, X, 0.0), Elastic::Rigid);
+        assert_eq!(elastic(false, node, Y, 40.0), Elastic::Rigid);
     }
 }

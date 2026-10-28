@@ -44,7 +44,7 @@ crate, quire, sill, shell-host and palmrest. Consumers depend on it by path.
 | `net` | `LocalNet::new(FileRoots)`, `FileRoots::new`, `MAX_RESOURCE_BYTES`, `LocalSource::{Data, File, Unservable}`, `LocalSource::{of, read, read_within}` |
 | `data_url` | `decode` |
 | `fonts` | `SharedFonts::{system, system_with, bundled, register, for_document}`, `FontFaces` |
-| `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::{with_env, Device}`, `PciVendor`, `PciDevice`, `rank`, `ranked`, `request_device`, `request_watched_device`, `WatchedDevice`, `DeviceHealth`, `Health`, `DeviceError`, `block_on`, `block_on_timeout`, `ADAPTER_ENV`, `opening` |
+| `adapter` | `AdapterFacts::{of, label}`, `DeviceKind`, `GpuBackend`, `AdapterPref::{with_env, Device}`, `PciVendor`, `PciDevice`, `rank`, `ranked`, `request_device`, `request_watched_device`, `WatchedDevice`, `DeviceHealth`, `DeviceError`, `block_on`, `block_on_timeout`, `ADAPTER_ENV`, `opening` |
 | `hit` | `element_at`, `element_of`, `is_content_element` |
 | `paint_rect` | `Affine2`, `Placed`, `painted_bounds`, `painted_rect` |
 | `snap` | `snap_layout(&mut BaseDocument, Scale120)` |
@@ -84,3 +84,4 @@ consumer.
 - No `unsafe`, no global state, no reading the environment: every function takes what it needs.
 - A helper that needs Wayland, Dioxus or a design-system type does not belong here; a repair a
   consumer keeps its own copy of does.
+- Types follow CONVENTIONS 4 (plain Rust first, 2026-10-28): private two-way flags are `bool`. `Health`, `Descend`, `Overscroll` and `Kind` are gone; `DeviceHealth::is_lost` replaces `state`. `Moved`, `Claim`, `Motion`, `Settled`, `Repaired`, `LastMove` and `LocalSource` wait for wave 2 (quire uses them).

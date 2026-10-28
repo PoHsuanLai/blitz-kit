@@ -3,7 +3,7 @@
 
 use blitz_dom::{BaseDocument, Node, NodeId};
 
-use super::chain::{Descend, candidates};
+use super::chain::candidates;
 use crate::scroll::geom::{Framed, Inside, ScrollAxis, ViewPoint};
 use crate::scroll::latch::Candidate;
 
@@ -41,7 +41,7 @@ pub(super) fn chain(host: &Node, (px, py): (f64, f64), axis: ScrollAxis) -> Vec<
         y: py - f64::from(offset.y),
     };
     let inner = sub.inner();
-    candidates(&inner, at, axis, Descend::Stay)
+    candidates(&inner, at, axis, false)
         .into_iter()
         .filter_map(|c| {
             let inside = Inside::of(c.scroller)?;
