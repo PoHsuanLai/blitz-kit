@@ -25,6 +25,11 @@ pub struct Physics {
     pub boost_min: f64,
     /// A fast lift glides up to this many times as far as its own speed says (1 is off).
     pub fling_max: f64,
+    /// A lift of a device whose system may send its own momentum waits this long (seconds)
+    /// before the engine glides.
+    pub lift_grace: f64,
+    /// A wheel detent's ease takes no longer than this (seconds).
+    pub wheel_smooth: f64,
 }
 
 impl Physics {
@@ -49,6 +54,8 @@ impl Physics {
             cap: s.momentum_cap_px_s.get(),
             boost_min: s.momentum_boost_threshold_px_s.get(),
             fling_max: s.fling_accel_max.get(),
+            lift_grace: s.double_scroll_grace_ms.secs(),
+            wheel_smooth: s.wheel_smooth_ms.secs(),
         }
     }
 }
@@ -80,11 +87,19 @@ pub enum ScrollIn {
     },
     /// The fingers moved by `delta` at `at` (the source's own timeline).
     Changed { delta: Px, at: SampleTime },
+    /// The fingers lifted at `at`, from a device whose system may follow with its own momentum
+    /// (`Tail`): the engine waits `Physics::lift_grace` before it glides itself.
+    Lifted { at: SampleTime },
+    /// The system's own momentum moved by `delta`: applied 1:1 like the fingers, but with no
+    /// boost, no fling gain and no glide of the engine's on top. The next `Ended` ends it.
+    Tail { delta: Px, at: SampleTime },
     /// The fingers lifted at `at`.
     Ended { at: SampleTime },
     /// A click or a palm ended the gesture: no glide.
     Cancelled,
-    /// A discrete step by `by` (wheel detent, arrow, page), smoothed; steps accumulate.
+    /// A wheel detent of `by` px: a step whose ease is capped by `Physics::wheel_smooth`.
+    Wheel { latch: Latch, by: Px },
+    /// A discrete step by `by` (arrow, page), smoothed; steps accumulate.
     Step { latch: Latch, by: Px },
     /// A jump to `to` (Home/End, a command).
     Jump {
@@ -136,6 +151,17 @@ pub struct Track {
     pub samples: Samples,
     /// Signed px/s added to the release (a flick boosting a glide).
     pub boost: f64,
+    /// The fingers lifted and the engine waits to see whether the system sends momentum.
+    pub lift: Option<Lift>,
+    /// The system's own momentum is moving this gesture: its end releases with no glide.
+    pub tail: bool,
+}
+
+/// A lift waiting out the grace: when it was heard (`t0`) and its sample time (`at`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Lift {
+    pub t0: Elapsed,
+    pub at: SampleTime,
 }
 
 /// A glide after release: signed `v0` from `x0` at `t0`.

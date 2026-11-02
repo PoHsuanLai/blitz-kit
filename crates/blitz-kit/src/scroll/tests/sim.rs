@@ -109,6 +109,20 @@ impl Sim {
         });
     }
 
+    /// The fingers lift from a device whose system may send momentum.
+    pub(super) fn lifted(&mut self) {
+        self.feed(ScrollIn::Lifted { at: self.at() });
+    }
+
+    /// One frame of the system\'s own momentum, moving `px`.
+    pub(super) fn tail(&mut self, px: f64) {
+        self.t += FRAME;
+        self.feed(ScrollIn::Tail {
+            delta: Px(px),
+            at: self.at(),
+        });
+    }
+
     pub(super) fn ended(&mut self) {
         self.feed(ScrollIn::Ended { at: self.at() });
     }

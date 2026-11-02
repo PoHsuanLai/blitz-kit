@@ -34,9 +34,15 @@ impl Target {
     /// Add a step of `by` px (signed) at `now`: the undelivered rest of the last step plus `by`,
     /// eased from here.
     pub fn push(self, by: f64, now: Elapsed) -> Target {
+        self.push_capped(by, now, f64::INFINITY)
+    }
+
+    /// [`Target::push`] with the ease taking no longer than `cap` seconds (a wheel's, from
+    /// `wheel_smooth_ms`).
+    pub fn push_capped(self, by: f64, now: Elapsed, cap: f64) -> Target {
         let rest = self.step.map_or(0.0, |s| s.total - s.delivered);
         let total = rest + by;
-        let dur = smooth::duration(total);
+        let dur = smooth::duration_capped(total, cap);
         if dur <= 0.0 {
             return Target { step: None };
         }
@@ -165,6 +171,14 @@ mod tests {
         let (_, before) = target.advance(at(199));
         let (done, whole) = target.advance(at(200));
         assert!(before > 4900.0 && before < 5000.0, "{before}");
+        assert_eq!(whole, 5000.0);
+        assert_eq!(done.motion(), Motion::Still);
+    }
+
+    #[test]
+    fn a_wheel_cap_shortens_the_step() {
+        let target = Target::default().push_capped(5000.0, at(0), 0.06);
+        let (done, whole) = target.advance(at(60));
         assert_eq!(whole, 5000.0);
         assert_eq!(done.motion(), Motion::Still);
     }
