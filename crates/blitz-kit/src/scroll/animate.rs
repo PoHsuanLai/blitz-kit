@@ -135,9 +135,15 @@ pub fn settle_stretch(latch: Latch, now: Elapsed, g: &Geom) -> Engine {
     }
 }
 
-/// Animate `latch` from `from` to `to` by the smooth rule; a zero-length step does nothing.
-pub fn smooth_to(latch: Latch, from: f64, to: f64, now: Elapsed) -> (Engine, Vec<ScrollOut>) {
-    let dur = smooth::duration(to - from);
+/// Animate `latch` from `from` to `to` by the smooth rule, taking at most `cap` seconds; a zero-length step does nothing.
+pub fn smooth_to(
+    latch: Latch,
+    from: f64,
+    to: f64,
+    now: Elapsed,
+    cap: f64,
+) -> (Engine, Vec<ScrollOut>) {
+    let dur = smooth::duration_capped(to - from, cap);
     if dur <= 0.0 {
         return (Engine::Idle, Vec::new());
     }
@@ -180,6 +186,12 @@ pub fn frame(
             (Engine::Held(h), vec![set(h.latch, x)])
         }
         Engine::Spring(s) => spring_frame(s, now, g),
+        Engine::Tracking(t) => match t.lift {
+            Some(lift) if since(lift.t0, now) >= physics.lift_grace => {
+                release_track(t, Some(lift.at), now, g, physics)
+            }
+            _ => (Engine::Tracking(t), Vec::new()),
+        },
         other => (other, Vec::new()),
     }
 }

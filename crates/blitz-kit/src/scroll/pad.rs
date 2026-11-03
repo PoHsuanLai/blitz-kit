@@ -15,8 +15,15 @@ pub enum PointerScroll {
     Detents { axis: ScrollAxis, steps: f64 },
     /// A continuous pan in offset px.
     Pan { dx: f64, dy: f64, kinetic: Kinetic },
-    /// The fingers lifted.
+    /// The fingers lifted. Nothing follows: the engine glides at once if the lift was fast.
     Stop,
+    /// The fingers lifted from a device whose system may follow with its own momentum
+    /// ([`PointerScroll::Tail`], within `double_scroll_grace_ms`): the engine holds its glide.
+    Lift,
+    /// A pan of the system's own momentum after a [`PointerScroll::Lift`], in offset px. It
+    /// moves the content 1:1 and nothing else: no boost, no fling gain, no glide of the
+    /// engine's. A `Stop` ends it.
+    Tail { dx: f64, dy: f64 },
     /// Nothing that scrolls.
     Nothing,
 }
@@ -34,6 +41,12 @@ pub enum PadEvent {
     Changed {
         delta: f64,
     },
+    /// The fingers lifted and the system may send momentum.
+    Lifted,
+    /// The system's momentum moved the content by `delta`.
+    Tail {
+        delta: f64,
+    },
     Ended,
 }
 
@@ -42,7 +55,26 @@ pub enum PadEvent {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Pad {
     Idle,
-    Moving { lock: AxisLock, kinetic: Kinetic },
+    Moving {
+        lock: AxisLock,
+        kinetic: Kinetic,
+    },
+    /// The fingers lifted and the system's momentum may follow.
+    Lifted {
+        lock: AxisLock,
+    },
+    /// The system's momentum is moving the content.
+    Tail {
+        lock: AxisLock,
+    },
+}
+
+/// The offset delta of a pan on the axis `lock` settled on.
+fn along(lock: AxisLock, dx: f64, dy: f64) -> f64 {
+    match lock {
+        AxisLock::Locked(ScrollAxis::X) => dx,
+        _ => dy,
+    }
 }
 
 impl Pad {
@@ -79,6 +111,29 @@ impl Pad {
                     (next, event)
                 }
             },
+            (Pad::Moving { lock, .. }, PointerScroll::Lift) => match lock {
+                AxisLock::Locked(_) => (Pad::Lifted { lock }, Some(PadEvent::Lifted)),
+                AxisLock::Free { .. } => (Pad::Idle, None),
+            },
+            (Pad::Lifted { lock } | Pad::Tail { lock }, PointerScroll::Tail { dx, dy }) => {
+                let delta = along(lock, dx, dy);
+                (Pad::Tail { lock }, Some(PadEvent::Tail { delta }))
+            }
+            (Pad::Lifted { .. } | Pad::Tail { .. }, pan @ PointerScroll::Pan { .. }) => {
+                Pad::Idle.feed(pan)
+            }
+            // Momentum with no lift before it (the grace ran out) is a pan like any other.
+            (Pad::Idle | Pad::Moving { .. }, PointerScroll::Tail { dx, dy }) => {
+                self.feed(PointerScroll::Pan {
+                    dx,
+                    dy,
+                    kinetic: Kinetic::Momentum,
+                })
+            }
+            (Pad::Idle, PointerScroll::Lift) => (Pad::Idle, None),
+            (Pad::Lifted { .. } | Pad::Tail { .. }, PointerScroll::Stop | PointerScroll::Lift) => {
+                (Pad::Idle, Some(PadEvent::Ended))
+            }
             (Pad::Moving { lock, .. }, PointerScroll::Stop) => {
                 let event = matches!(lock, AxisLock::Locked(_)).then_some(PadEvent::Ended);
                 (Pad::Idle, event)
@@ -141,5 +196,37 @@ mod tests {
         // A finger moving toward the user (+y) decreases the offset with Natural.
         assert_eq!(natural(10.0, NaturalScroll::Natural), -10.0);
         assert_eq!(natural(10.0, NaturalScroll::Traditional), 10.0);
+    }
+
+    #[test]
+    fn a_lift_then_the_systems_momentum_is_one_gesture_ended_by_a_stop() {
+        let pan = |dy| PointerScroll::Pan {
+            dx: 0.0,
+            dy,
+            kinetic: Kinetic::Momentum,
+        };
+        let (pad, _) = Pad::Idle.feed(pan(30.0));
+        let (pad, e) = pad.feed(PointerScroll::Lift);
+        assert_eq!(e, Some(PadEvent::Lifted));
+        let (pad, e) = pad.feed(PointerScroll::Tail { dx: 9.0, dy: 6.0 });
+        assert_eq!(e, Some(PadEvent::Tail { delta: 6.0 }), "locked to y");
+        let (pad, e) = pad.feed(PointerScroll::Tail { dx: 0.0, dy: 0.0 });
+        assert_eq!(e, Some(PadEvent::Tail { delta: 0.0 }));
+        let (pad, e) = pad.feed(PointerScroll::Stop);
+        assert_eq!((pad, e), (Pad::Idle, Some(PadEvent::Ended)));
+    }
+
+    #[test]
+    fn a_new_pan_after_a_lift_is_a_new_gesture_and_a_lone_tail_is_a_pan() {
+        let pan = PointerScroll::Pan {
+            dx: 0.0,
+            dy: 30.0,
+            kinetic: Kinetic::Momentum,
+        };
+        let (lifted, _) = Pad::Idle.feed(pan).0.feed(PointerScroll::Lift);
+        let (_, e) = lifted.feed(pan);
+        assert!(matches!(e, Some(PadEvent::Began { .. })), "{e:?}");
+        let (_, e) = Pad::Idle.feed(PointerScroll::Tail { dx: 0.0, dy: 30.0 });
+        assert!(matches!(e, Some(PadEvent::Began { .. })), "{e:?}");
     }
 }

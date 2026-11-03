@@ -303,3 +303,132 @@ fn a_fast_lift_glides_further_than_its_speed_says_and_a_slow_one_does_not() {
         }
     }
 }
+
+/// The system\'s momentum after a 2000 px/s flick: 60 frames of decaying deltas.
+fn os_tail() -> Vec<f64> {
+    (0..60).map(|n| 12.0 * 0.93f64.powi(n)).collect()
+}
+
+#[test]
+fn the_systems_momentum_is_applied_one_to_one_and_the_engine_adds_no_glide() {
+    // Default settings: the fling gain is on, and still adds nothing.
+    let mut sim = Sim::with(1000.0, 100_000.0, Elastic::Rigid, ScrollSettings::default());
+    sim.began(Dir::Pos, AtEdge::Inside);
+    sim.stroke(4000.0, 100);
+    sim.lifted();
+    let lifted_at = sim.offset();
+    assert_eq!(
+        sim.engine.motion(),
+        Motion::Animating,
+        "waits out the grace"
+    );
+    // The tail begins a frame after the lift, well inside the grace.
+    let mut want = lifted_at;
+    for px in os_tail() {
+        let before = sim.offset();
+        sim.tail(px);
+        want += px;
+        assert!((sim.offset() - before - px).abs() < 1e-9, "1:1, no boost");
+    }
+    sim.ended();
+    assert!(
+        (sim.offset() - want).abs() < 1e-9,
+        "total is the sum of the deltas"
+    );
+    assert_eq!(sim.engine, Engine::Idle, "no glide after the tail");
+    assert!(sim.run(3.0).is_empty());
+    assert!((sim.offset() - want).abs() < 1e-9);
+    assert_eq!(sim.when(NotifyPhase::MomentumBegan), None);
+}
+
+#[test]
+fn a_flick_the_system_sends_no_momentum_for_glides_after_the_grace() {
+    let mut sim = Sim::new(1000.0, 100_000.0, Elastic::Rigid);
+    sim.began(Dir::Pos, AtEdge::Inside);
+    sim.stroke(2000.0, 100);
+    sim.lifted();
+    let (released, lifted_t) = (sim.offset(), sim.t);
+    let grace = sim.physics.lift_grace;
+    while sim.t - lifted_t < grace - 2.0 * FRAME {
+        sim.t += FRAME;
+        sim.feed(ScrollIn::Frame);
+        assert_eq!(sim.offset(), released, "still within the grace");
+    }
+    sim.run(5.0);
+    let travel = sim.offset() - released;
+    let glide = sim.physics.glide.total(2000.0);
+    assert!((travel - glide).abs() < 1.0, "{travel} vs {glide}");
+    assert!(sim.when(NotifyPhase::MomentumBegan).is_some());
+    assert_eq!(sim.engine, Engine::Idle);
+}
+
+#[test]
+fn a_slow_lift_ends_at_once_without_waiting() {
+    let mut sim = Sim::new(1000.0, 100_000.0, Elastic::Rigid);
+    sim.began(Dir::Pos, AtEdge::Inside);
+    sim.stroke(2000.0, 100);
+    sim.t += 0.060;
+    sim.lifted();
+    assert_eq!(sim.engine, Engine::Idle);
+}
+
+#[test]
+fn the_systems_momentum_stretches_at_the_end_and_snaps_back() {
+    let mut sim = Sim::with(50.0, 5000.0, Elastic::Elastic, ScrollSettings::default());
+    sim.began(Dir::Neg, AtEdge::Inside);
+    sim.stroke(-3000.0, 60);
+    sim.lifted();
+    for px in os_tail() {
+        sim.tail(-px);
+    }
+    assert!(
+        sim.offset() < -5.0,
+        "the tail stretched the edge: {}",
+        sim.offset()
+    );
+    assert!(sim.offset() > -400.0, "through the band, not 1:1");
+    sim.ended();
+    assert!(matches!(sim.engine, Engine::Rebound(_)), "{:?}", sim.engine);
+    sim.run(2.0);
+    assert_eq!(sim.offset(), 0.0);
+    assert_eq!(sim.engine, Engine::Idle);
+}
+
+#[test]
+fn a_new_touch_during_the_grace_starts_a_fresh_gesture() {
+    let mut sim = Sim::new(1000.0, 100_000.0, Elastic::Rigid);
+    sim.began(Dir::Pos, AtEdge::Inside);
+    sim.stroke(2000.0, 100);
+    sim.lifted();
+    sim.t += FRAME;
+    sim.began(Dir::Pos, AtEdge::Inside);
+    assert!(matches!(&sim.engine, Engine::Tracking(t) if t.lift.is_none() && !t.tail));
+}
+
+#[test]
+fn a_wheel_detent_eases_no_longer_than_the_wheel_smooth_cap() {
+    let mac = ScrollSettings::macos();
+    let mut sim = Sim::with(0.0, 100_000.0, Elastic::Rigid, mac);
+    sim.feed(ScrollIn::Wheel {
+        latch: PAGE,
+        by: Px(40.0),
+    });
+    let trace = sim.run(1.0);
+    let (end, _) = *trace.last().expect("frames");
+    assert!(end <= 0.045 + FRAME, "a click lands in {end}");
+    assert_eq!(sim.offset(), 40.0);
+    let mut sim = Sim::with(0.0, 100_000.0, Elastic::Rigid, mac);
+    sim.feed(ScrollIn::Wheel {
+        latch: PAGE,
+        by: Px(400.0),
+    });
+    let (end, _) = *sim.run(1.0).last().expect("frames");
+    assert!(end <= 0.060 + FRAME, "capped at 60 ms: {end}");
+    let mut sim = Sim::new(0.0, 100_000.0, Elastic::Rigid);
+    sim.feed(ScrollIn::Wheel {
+        latch: PAGE,
+        by: Px(400.0),
+    });
+    let (end, _) = *sim.run(1.0).last().expect("frames");
+    assert!(end > 0.15, "the default keeps its 200 ms: {end}");
+}

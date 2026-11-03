@@ -8,7 +8,7 @@ use crate::scroll::doc;
 use crate::scroll::engine::{Engine, Kinetic, ScrollIn};
 use crate::scroll::geom::{Dir, Px, ScrollAxis, ViewPoint};
 use crate::scroll::latch::{self, Latched};
-use crate::scroll::pad::{PadEvent, PointerScroll};
+use crate::scroll::pad::{Pad, PadEvent, PointerScroll};
 use crate::scroll::rubber::AtEdge;
 use crate::scroll::tuning::Env;
 use crate::scroll::velocity::SampleTime;
@@ -25,7 +25,14 @@ impl ScrollDriver {
     ) -> Moves {
         match input {
             PointerScroll::Detents { axis, steps } => self.detents(doc, axis, steps, at, env),
-            pan @ (PointerScroll::Pan { .. } | PointerScroll::Stop) => {
+            pan @ (PointerScroll::Pan { .. }
+            | PointerScroll::Lift
+            | PointerScroll::Tail { .. }
+            | PointerScroll::Stop) => {
+                // The grace ran out and the engine glided on its own: the lift is over.
+                if matches!(self.pad, Pad::Lifted { .. }) && !self.engine.is_lifted() {
+                    self.pad = Pad::Idle;
+                }
                 let (pad, event) = self.pad.feed(pan);
                 self.pad = pad;
                 match event {
@@ -38,7 +45,8 @@ impl ScrollDriver {
     }
 
     /// `steps` wheel detents on `axis` (signed, positive toward the maximum): each adds the
-    /// detent distance to the target, which animates by the smooth rule (design/11 §11.3.11).
+    /// detent distance to the target, which animates by the smooth rule (capped by
+    /// `wheel_smooth_ms`) (design/11 §11.3.11).
     /// Detents less than the burst window apart keep their first scroller.
     pub fn detents(
         &mut self,
@@ -61,7 +69,7 @@ impl ScrollDriver {
             return Moves::none();
         };
         self.burst = self.burst.record(latch, env.now);
-        self.run(doc, ScrollIn::Step { latch, by: Px(px) }, env)
+        self.run(doc, ScrollIn::Wheel { latch, by: Px(px) }, env)
             .took()
     }
 
@@ -93,6 +101,14 @@ impl ScrollDriver {
                     at: sampled,
                 };
                 self.run(doc, changed, env)
+            }
+            PadEvent::Lifted => self.run(doc, ScrollIn::Lifted { at: sampled }, env),
+            PadEvent::Tail { delta } => {
+                let tail = ScrollIn::Tail {
+                    delta: Px(delta),
+                    at: sampled,
+                };
+                self.run(doc, tail, env)
             }
             PadEvent::Ended => self.run(doc, ScrollIn::Ended { at: sampled }, env),
         }

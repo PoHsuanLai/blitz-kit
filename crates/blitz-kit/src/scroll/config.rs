@@ -45,6 +45,11 @@ impl ScrollMs {
         Duration::from_millis(u64::from(self.0))
     }
 
+    /// Whole milliseconds.
+    pub fn get_ms(self) -> u16 {
+        self.0
+    }
+
     /// In seconds, for the formulas.
     pub fn secs(self) -> f64 {
         f64::from(self.0) / 1000.0
@@ -121,7 +126,12 @@ pub struct ScrollSettings {
     /// The most a fast lift multiplies the glide by (`scroll::accel`); 1 turns it off.
     pub fling_accel_max: ScrollScalar,
     pub momentum_boost_threshold_px_s: ScrollScalar,
+    /// How long the fingers' lift waits for the system's own momentum before the engine glides
+    /// itself (`scroll::pad::PointerScroll::Lift`); a host whose system sends none never lifts
+    /// that way and is not delayed.
     pub double_scroll_grace_ms: ScrollMs,
+    /// The longest a wheel detent's ease takes (the step is still 1000 px/s below it).
+    pub wheel_smooth_ms: ScrollMs,
     pub scrollbars: ScrollbarVisibility,
 }
 
@@ -147,7 +157,24 @@ impl Default for ScrollSettings {
             fling_accel_max: ScrollScalar(2.0),
             momentum_boost_threshold_px_s: ScrollScalar(350.0),
             double_scroll_grace_ms: ScrollMs(150),
+            wheel_smooth_ms: ScrollMs(200),
             scrollbars: ScrollbarVisibility::WhenScrolling,
+        }
+    }
+}
+
+impl ScrollSettings {
+    /// The macOS feel. The system has already accelerated a notched wheel's clicks, so none is
+    /// added (`wheel_accel_max` 1), and a click is 40 px: Chromium's `kScrollbarPixelsPerCocoaTick`
+    /// (`ui/events/cocoa/cocoa_event_utils.h`, applied to `NSEvent.deltaY` when the device is not
+    /// continuous) and WebKit's `Scrollbar::pixelsPerLineStep` agree. The ease stays under 60 ms,
+    /// so a click lands as the system placed it.
+    pub fn macos() -> ScrollSettings {
+        ScrollSettings {
+            wheel_detent_px: ScrollPx(40),
+            wheel_accel_max: ScrollScalar(1.0),
+            wheel_smooth_ms: ScrollMs(60),
+            ..ScrollSettings::default()
         }
     }
 }
@@ -181,7 +208,27 @@ mod tests {
         for (name, got, want) in cases {
             assert!((got - want).abs() < 1e-6, "{name}: {got} != {want}");
         }
+        assert_eq!(s.wheel_smooth_ms.secs(), 0.2);
         assert_eq!(s.natural, NaturalScroll::Natural);
         assert_eq!(s.scrollbars, ScrollbarVisibility::WhenScrolling);
+    }
+
+    #[test]
+    fn the_macos_wheel_is_the_systems_own() {
+        let m = ScrollSettings::macos();
+        assert_eq!(m.wheel_detent_px.get(), 40.0);
+        assert_eq!(m.wheel_accel_max.get(), 1.0);
+        assert_eq!(m.wheel_smooth_ms.get_ms(), 60);
+        let d = ScrollSettings::default();
+        assert_eq!(
+            ScrollSettings {
+                wheel_detent_px: d.wheel_detent_px,
+                wheel_accel_max: d.wheel_accel_max,
+                wheel_smooth_ms: d.wheel_smooth_ms,
+                ..m
+            },
+            d,
+            "nothing else differs"
+        );
     }
 }

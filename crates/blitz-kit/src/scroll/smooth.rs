@@ -11,7 +11,12 @@ const E_OUT: (f64, f64, f64, f64) = (0.22, 0.9, 0.30, 1.0);
 
 /// How long a step of `distance` px animates, seconds.
 pub fn duration(distance: f64) -> f64 {
-    (distance.abs() / SPEED).min(MAX_S)
+    duration_capped(distance, MAX_S)
+}
+
+/// How long a step of `distance` px animates when it may take no longer than `cap` seconds.
+pub fn duration_capped(distance: f64, cap: f64) -> f64 {
+    (distance.abs() / SPEED).min(cap.min(MAX_S))
 }
 
 /// The eased progress at linear progress `p` (clamped to `0..=1`).

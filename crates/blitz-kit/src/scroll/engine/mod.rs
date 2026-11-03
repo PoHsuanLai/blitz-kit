@@ -8,15 +8,15 @@ mod types;
 
 pub use types::ScrollAnimate;
 pub use types::{
-    Flight, Held, Kinetic, Motion, NotifyPhase, Pending, Physics, Rebound, ScrollIn, ScrollOut,
-    Smooth, Spring, Track,
+    Flight, Held, Kinetic, Lift, Motion, NotifyPhase, Pending, Physics, Rebound, ScrollIn,
+    ScrollOut, Smooth, Spring, Track,
 };
 
 use crate::scroll::animate;
 use crate::scroll::geom::{Geom, Latch, Px};
 use crate::scroll::time::Elapsed;
 
-use phases::{began, changed, lifted, may_begin};
+use phases::{began, changed, lifted, lifted_to_wait, may_begin, tail};
 
 /// The engine (design/11 §11.4).
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -39,6 +39,7 @@ impl Engine {
         match input {
             ScrollIn::Began { latched, .. } => Some(latched.latch),
             ScrollIn::Step { latch, .. }
+            | ScrollIn::Wheel { latch, .. }
             | ScrollIn::Jump { latch, .. }
             | ScrollIn::Hold { latch, .. } => Some(*latch),
             _ => self.latch(),
@@ -59,9 +60,15 @@ impl Engine {
         }
     }
 
+    /// Whether the fingers lifted and the engine waits for the system's momentum.
+    pub fn is_lifted(&self) -> bool {
+        matches!(self, Engine::Tracking(t) if t.lift.is_some())
+    }
+
     /// Whether the engine animates (and so needs a frame per callback).
     pub fn motion(&self) -> Motion {
         match self {
+            Engine::Tracking(t) if t.lift.is_some() => Motion::Animating,
             Engine::Idle | Engine::Pending(_) | Engine::Tracking(_) => Motion::Still,
             Engine::Momentum(_)
             | Engine::Rebound(_)
@@ -95,6 +102,8 @@ pub fn step(
             kinetic,
         } => began(engine, latched, dir, kinetic, now, &g, physics),
         ScrollIn::Changed { delta, at } => changed(engine, delta.0, at, &g, physics),
+        ScrollIn::Lifted { at } => lifted_to_wait(engine, at, now, &g, physics),
+        ScrollIn::Tail { delta, at } => tail(engine, delta.0, at, &g, physics),
         ScrollIn::Ended { at } => lifted(engine, Some(at), now, &g, physics),
         ScrollIn::Cancelled => lifted(engine, None, now, &g, physics),
         ScrollIn::Step { latch, by } => {
@@ -102,10 +111,20 @@ pub fn step(
                 Engine::Smooth(s) if s.latch == latch => (g.offset.0, s.to),
                 _ => (g.clamp(g.offset.0), g.clamp(g.offset.0)),
             };
-            animate::smooth_to(latch, from, g.clamp(base + by.0), now)
+            animate::smooth_to(latch, from, g.clamp(base + by.0), now, f64::INFINITY)
+        }
+        ScrollIn::Wheel { latch, by } => {
+            let (from, base) = match &engine {
+                Engine::Smooth(s) if s.latch == latch => (g.offset.0, s.to),
+                _ => (g.clamp(g.offset.0), g.clamp(g.offset.0)),
+            };
+            let cap = physics.wheel_smooth;
+            animate::smooth_to(latch, from, g.clamp(base + by.0), now, cap)
         }
         ScrollIn::Jump { latch, to, animate } => match animate {
-            ScrollAnimate::Smooth => animate::smooth_to(latch, g.offset.0, g.clamp(to.0), now),
+            ScrollAnimate::Smooth => {
+                animate::smooth_to(latch, g.offset.0, g.clamp(to.0), now, f64::INFINITY)
+            }
             ScrollAnimate::Instant => (Engine::Idle, vec![set(latch, g.clamp(to.0))]),
         },
         ScrollIn::Hold { latch, step } => match engine {

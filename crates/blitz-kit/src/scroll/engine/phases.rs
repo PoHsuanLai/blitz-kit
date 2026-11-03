@@ -1,8 +1,9 @@
 //! The gesture phases: touch, begin, change and lift.
 
-use super::types::{Kinetic, NotifyPhase, Pending, Physics, Track};
+use super::types::{Kinetic, Lift, NotifyPhase, Pending, Physics, Track};
 use super::{Engine, ScrollOut, notify, set};
 use crate::scroll::animate;
+use crate::scroll::config::ScrollMomentum;
 use crate::scroll::geom::{Dir, Geom};
 use crate::scroll::latch::Latched;
 use crate::scroll::time::Elapsed;
@@ -49,6 +50,8 @@ pub(super) fn began(
         pos: animate::pos_for(g.offset.0, g, latched.began, physics),
         samples: Samples::default(),
         boost,
+        lift: None,
+        tail: false,
     };
     (
         Engine::Tracking(track),
@@ -80,6 +83,47 @@ pub(super) fn changed(
     (Engine::Tracking(track), out)
 }
 
+/// The fingers lifted at `at` from a device whose system may send momentum of its own: a lift
+/// fast enough to be followed waits out the grace (`Physics::lift_grace`), a slower one ends now.
+pub(super) fn lifted_to_wait(
+    engine: Engine,
+    at: SampleTime,
+    now: Elapsed,
+    g: &Geom,
+    physics: &Physics,
+) -> (Engine, Vec<ScrollOut>) {
+    match engine {
+        Engine::Tracking(mut track)
+            if track.kinetic == Kinetic::Momentum
+                && !track.tail
+                && physics.momentum == ScrollMomentum::On
+                && track.samples.velocity(at, physics.release).abs() >= physics.start =>
+        {
+            track.lift = Some(Lift { t0: now, at });
+            (Engine::Tracking(track), Vec::new())
+        }
+        other => lifted(other, Some(at), now, g, physics),
+    }
+}
+
+/// The system's momentum moved the gesture by `delta`: tracked 1:1, and its end (`lifted`)
+/// releases with no glide.
+pub(super) fn tail(
+    engine: Engine,
+    delta: f64,
+    at: SampleTime,
+    g: &Geom,
+    physics: &Physics,
+) -> (Engine, Vec<ScrollOut>) {
+    let Engine::Tracking(mut track) = engine else {
+        return (engine, Vec::new());
+    };
+    track.lift = None;
+    track.tail = true;
+    track.boost = 0.0;
+    changed(Engine::Tracking(track), delta, at, g, physics)
+}
+
 /// The fingers lifted (`Some(at)`) or the gesture was cancelled (`None`).
 pub(super) fn lifted(
     engine: Engine,
@@ -89,7 +133,10 @@ pub(super) fn lifted(
     physics: &Physics,
 ) -> (Engine, Vec<ScrollOut>) {
     match engine {
-        Engine::Tracking(track) => animate::release_track(track, at, now, g, physics),
+        Engine::Tracking(track) => {
+            let at = at.filter(|_| !track.tail);
+            animate::release_track(track, at, now, g, physics)
+        }
         Engine::Pending(Pending {
             last: Some(latch), ..
         }) => (animate::settle_stretch(latch, now, g), Vec::new()),
